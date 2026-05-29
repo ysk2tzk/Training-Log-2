@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&display=swap" rel="stylesheet" />
+    <title>ギア管理</title>
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --card: #fffdf8;
+        --ink: #1f2a2e;
+        --accent: #0c6b58;
+        --line: #d9d3c6;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+        background:
+          radial-gradient(circle at 10% 10%, #fff5d9 0%, transparent 45%),
+          radial-gradient(circle at 90% 0%, #d8efe9 0%, transparent 35%),
+          var(--bg);
+        color: var(--ink);
+      }
+      .page { max-width: 720px; margin: 0 auto; padding: 16px 14px 28px; }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      }
+      h1 {
+        margin: 0;
+        font-size: 27px;
+        font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+        font-weight: 900;
+        letter-spacing: 0.01em;
+      }
+      .header { display: flex; align-items: center; justify-content: space-between; margin: 0 0 12px; }
+      .menu-wrap { position: relative; }
+      .menu-btn {
+        width: 44px;
+        min-height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--ink);
+        font-size: 22px;
+        line-height: 1;
+        padding: 0;
+      }
+      .menu-panel {
+        position: absolute;
+        right: 0;
+        top: 50px;
+        min-width: 140px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        padding: 6px;
+      }
+      .menu-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: #fff;
+        color: var(--ink);
+        border: 0;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 14px;
+      }
+      .hidden { display: none; }
+      .field { margin-bottom: 10px; }
+      label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+      input, button {
+        width: 100%;
+        min-height: 44px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        font-size: 16px;
+        background: #fff;
+      }
+      button {
+        border: none;
+        background: linear-gradient(90deg, var(--accent), #109a7e);
+        color: #fff;
+        font-weight: 700;
+      }
+      .divider { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }
+      .list-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+      }
+      .list-title { font-weight: 600; font-size: 14px; }
+      .toggle-wrap { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+      .toggle-wrap input { width: 16px; min-height: auto; }
+      .group {
+        margin: 12px 0;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        font-size: 14px;
+        border-top: 1px dashed var(--line);
+        padding: 8px 0;
+      }
+      .row:first-of-type { border-top: 0; }
+      .gear-name {
+        display: inline-block;
+        font-size: 20px;
+        color: #c86446;
+        margin-bottom: 6px;
+        font-family: "Rajdhani", "Noto Sans JP", sans-serif;
+        letter-spacing: 0.02em;
+      }
+      .gear-meta { font-size: 14px; font-weight: 400; color: var(--ink); }
+      .end-btn {
+        width: auto;
+        min-height: 32px;
+        padding: 6px 10px;
+        font-size: 12px;
+        background: #d67d1f;
+        border-radius: 8px;
+      }
+      .err { color: #c23131; font-size: 13px; min-height: 1.2em; }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <div class="header">
+          <h1>トレーニング記録</h1>
+          <div class="menu-wrap">
+            <button id="menuBtn" class="menu-btn" type="button" aria-label="メニュー">☰</button>
+            <div id="menuPanel" class="menu-panel hidden">
+              <button id="mainPageBtn" class="menu-item" type="button">メインページ</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="gearName">Name</label>
+          <input id="gearName" type="text" />
+        </div>
+        <div class="field">
+          <label for="startDate">使用開始日</label>
+          <input id="startDate" type="date" />
+        </div>
+        <button id="addGearBtn" type="button">追加</button>
+        <p id="error" class="err"></p>
+
+        <hr class="divider" />
+
+        <div class="list-head">
+          <div class="list-title">ギア一覧</div>
+          <label class="toggle-wrap">
+            <input id="includeEnded" type="checkbox" />
+            使用終了も含む
+          </label>
+        </div>
+
+        <div id="gearList"></div>
+      </section>
+    </main>
+
+    <script>
+      const menuBtn = document.getElementById("menuBtn");
+      const menuPanel = document.getElementById("menuPanel");
+      const mainPageBtn = document.getElementById("mainPageBtn");
+      const gearNameEl = document.getElementById("gearName");
+      const startDateEl = document.getElementById("startDate");
+      const addGearBtn = document.getElementById("addGearBtn");
+      const includeEndedEl = document.getElementById("includeEnded");
+      const gearListEl = document.getElementById("gearList");
+      const errorEl = document.getElementById("error");
+
+      startDateEl.value = new Date().toISOString().slice(0, 10);
+
+      function renderGears(gears) {
+        if (!gears.length) {
+          gearListEl.innerHTML = '<div class="group"><div class="muted">表示できるギアがありません。</div></div>';
+          return;
+        }
+
+        gearListEl.innerHTML = gears.map((g) => {
+          const startDate = String(g.start_date || "").slice(0, 10);
+          const endDate = g.end_date ? ` / 使用終了: ${String(g.end_date).slice(0, 10)}` : "";
+          const distance = Number(g.distance || 0).toFixed(1);
+          return `
+            <div class="group">
+              <div class="row">
+                <div><span class="gear-name">${g.name}</span><br><span class="gear-meta">${distance}km / 使用開始: ${startDate}${endDate}</span></div>
+                <div>${Number(g.status) === 1 ? `<button class="end-btn" type="button" data-gear-id="${g.id}" data-start-date="${startDate}">使用終了</button>` : ""}</div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      async function loadGears() {
+        errorEl.textContent = "";
+        const includeEnded = includeEndedEl.checked ? "1" : "0";
+        const res = await fetch(`/api/gears?includeEnded=${includeEnded}`);
+        if (!res.ok) {
+          const err = await res.json();
+          errorEl.textContent = err.error || "ギア一覧の取得に失敗しました";
+          return;
+        }
+        const data = await res.json();
+        renderGears(data.gears || []);
+      }
+
+      async function addGear() {
+        errorEl.textContent = "";
+        const body = {
+          name: gearNameEl.value,
+          start_date: startDateEl.value
+        };
+
+        const res = await fetch("/api/gears", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          errorEl.textContent = err.error || "ギア追加に失敗しました";
+          return;
+        }
+
+        gearNameEl.value = "";
+        await loadGears();
+      }
+
+      async function endGear(id, gearStartDate) {
+        errorEl.textContent = "";
+        const endDate = startDateEl.value;
+        if (!endDate) {
+          errorEl.textContent = "使用終了日を入力してください";
+          return;
+        }
+        if (gearStartDate && endDate < gearStartDate) {
+          errorEl.textContent = `使用終了日は使用開始日(${gearStartDate})以降を指定してください`;
+          return;
+        }
+        const ok = window.confirm(`このギアを使用終了にしますか？\n使用終了日: ${endDate}`);
+        if (!ok) return;
+
+        const res = await fetch(`/api/gears/${id}/end`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ end_date: endDate })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          errorEl.textContent = err.error || "使用終了に失敗しました";
+          return;
+        }
+
+        await loadGears();
+      }
+
+      menuBtn.addEventListener("click", () => {
+        menuPanel.classList.toggle("hidden");
+      });
+      mainPageBtn.addEventListener("click", () => {
+        window.location.href = "/";
+      });
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".menu-wrap")) menuPanel.classList.add("hidden");
+      });
+
+      addGearBtn.addEventListener("click", addGear);
+      includeEndedEl.addEventListener("change", loadGears);
+      gearListEl.addEventListener("click", (e) => {
+        const btn = e.target.closest(".end-btn");
+        if (!btn) return;
+        endGear(Number(btn.dataset.gearId), btn.dataset.startDate || "");
+      });
+
+      loadGears().catch(() => {
+        errorEl.textContent = "初期化に失敗しました";
+      });
+    </script>
+  </body>
+</html>
