@@ -292,9 +292,33 @@
         `;
       }
 
+      function getGearOptionsForItem(item) {
+        const allGears = (options.gears || []).map((g) => ({
+          name: typeof g === "string" ? g : g.name,
+          category: typeof g === "string" ? "" : g.category
+        }));
+
+        if (item === "ラン") {
+          return allGears
+            .filter((g) => g.category === "Shoes")
+            .map((g) => g.name)
+            .filter(Boolean);
+        }
+
+        if (item === "バイク") {
+          return allGears
+            .filter((g) => g.category === "Bike")
+            .map((g) => g.name)
+            .filter(Boolean);
+        }
+
+        return allGears.map((g) => g.name).filter(Boolean);
+      }
+
       function renderDynamicFields() {
         const cat = categoryEl.value;
         const item = itemEl.value;
+        const isOther = item === OTHER || item.startsWith("その他");
         if (!cat || !item) {
           dynamicFieldsEl.innerHTML = "";
           return;
@@ -304,18 +328,20 @@
           if (item === "ラン" || item === "バイク") {
             const repsPlaceholder = item === "バイク" ? "min" : "0.0km";
             const repsLabel = item === "バイク" ? "継続時間" : "距離";
+            const gearOptions = getGearOptionsForItem(item);
             dynamicFieldsEl.innerHTML =
               fieldHtml("reps", repsLabel, "number", repsPlaceholder) +
-              selectHtml("gear", "Gear", options.gears);
+              selectHtml("gear", "Gear", gearOptions);
             return;
           }
 
-          if (item === OTHER) {
+          if (isOther) {
+            const gearOptions = getGearOptionsForItem(item);
             dynamicFieldsEl.innerHTML =
               fieldHtml("customItem", "", "text", "アイテム名") +
               fieldHtml("weight", "Weight", "number", "0.0kg") +
               fieldHtml("reps", "Reps", "number", "回") +
-              selectHtml("gear", "Gear", options.gears);
+              selectHtml("gear", "Gear", gearOptions);
             return;
           }
 
@@ -327,7 +353,7 @@
 
         if (cat === "Reward") {
           dynamicFieldsEl.innerHTML =
-            (item === OTHER ? fieldHtml("customItem", "", "text", "アイテム名") : "") +
+            (isOther ? fieldHtml("customItem", "", "text", "アイテム名") : "") +
             fieldHtml("reps", "価格", "number", "円");
         }
       }
@@ -367,7 +393,12 @@
 
       async function loadOptions() {
         const res = await fetch("/api/options");
-        options = await res.json();
+        const data = await res.json();
+        options = {
+          trainingItems: Array.isArray(data?.trainingItems) ? data.trainingItems : [],
+          rewardItems: Array.isArray(data?.rewardItems) ? data.rewardItems : [],
+          gears: Array.isArray(data?.gears) ? data.gears : []
+        };
         renderItemOptions();
         dynamicFieldsEl.innerHTML = "";
       }

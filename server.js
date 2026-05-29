@@ -1,4 +1,5 @@
 import express from "express";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
@@ -6,12 +7,31 @@ import ws from "ws";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const envPath = path.join(__dirname, ".env");
+
+if (fs.existsSync(envPath)) {
+  const envText = fs.readFileSync(envPath, "utf8");
+  for (const rawLine of envText.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+    const eqIndex = line.indexOf("=");
+    if (eqIndex <= 0) continue;
+    const key = line.slice(0, eqIndex).trim();
+    const value = line.slice(eqIndex + 1).trim().replace(/^["']|["']$/g, "");
+    if (!(key in process.env)) process.env[key] = value;
+  }
+}
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://tqhvurtivvibqbmrtkdb.supabase.co";
+const KEY_SOURCE = process.env.SUPABASE_SERVICE_ROLE_KEY
+  ? "service_role"
+  : process.env.SUPABASE_ANON_KEY
+    ? "anon"
+    : "fallback_publishable";
 const SUPABASE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
   process.env.SUPABASE_ANON_KEY ||
@@ -62,7 +82,7 @@ app.get("/api/options", async (req, res) => {
     const [trainingRes, rewardRes, gearRes] = await Promise.all([
       supabase.from("log").select("item").eq("category", "Training").not("item", "is", null),
       supabase.from("log").select("item").eq("category", "Reward").not("item", "is", null),
-      supabase.from("gear").select("name").order("name", { ascending: true })
+      supabase.from("gear").select("name, category").order("name", { ascending: true })
     ]);
 
     if (trainingRes.error || rewardRes.error || gearRes.error) {
@@ -72,7 +92,12 @@ app.get("/api/options", async (req, res) => {
 
     const trainingItems = [...new Set((trainingRes.data || []).map((r) => r.item || "").filter(Boolean))].sort((a, b) => a.localeCompare(b, "ja"));
     const rewardItems = [...new Set((rewardRes.data || []).map((r) => r.item || "").filter(Boolean))].sort((a, b) => a.localeCompare(b, "ja"));
-    const gears = (gearRes.data || []).map((r) => r.name || "").filter(Boolean);
+    const gears = (gearRes.data || [])
+      .map((r) => ({
+        name: r.name || "",
+        category: r.category || ""
+      }))
+      .filter((g) => Boolean(g.name));
 
     return res.json({ trainingItems, rewardItems, gears });
   } catch (e) {
@@ -266,4 +291,5 @@ app.delete("/api/logs/:id", async (req, res) => {
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
+  console.log(`Supabase key source: ${KEY_SOURCE}`);
 });
