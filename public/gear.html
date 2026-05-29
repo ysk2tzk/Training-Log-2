@@ -81,6 +81,8 @@
       label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
       input, button {
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
         min-height: 44px;
         border-radius: 12px;
         border: 1px solid var(--line);
@@ -88,6 +90,11 @@
         font-size: 16px;
         background: #fff;
       }
+      input[type="date"] {
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
       button {
         border: none;
         background: linear-gradient(90deg, var(--accent), #109a7e);
