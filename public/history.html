@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet" />
+    <title>過去ログ一覧</title>
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --card: #fffdf8;
+        --ink: #1f2a2e;
+        --accent: #0c6b58;
+        --line: #d9d3c6;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+        background:
+          radial-gradient(circle at 10% 10%, #fff5d9 0%, transparent 45%),
+          radial-gradient(circle at 90% 0%, #d8efe9 0%, transparent 35%),
+          var(--bg);
+        color: var(--ink);
+      }
+      .page {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 16px 14px 28px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      }
+      h1 {
+        margin: 0;
+        font-size: 27px;
+        font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+        font-weight: 900;
+        letter-spacing: 0.01em;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 0 12px;
+      }
+      .menu-wrap { position: relative; }
+      .menu-btn {
+        width: 44px;
+        min-height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--ink);
+        font-size: 22px;
+        line-height: 1;
+        padding: 0;
+      }
+      .menu-panel {
+        position: absolute;
+        right: 0;
+        top: 50px;
+        min-width: 168px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        padding: 6px;
+      }
+      .menu-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: #fff;
+        color: var(--ink);
+        border: 0;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 14px;
+        white-space: nowrap;
+      }
+      .menu-item:hover { background: #f6f3eb; }
+      .hidden { display: none; }
+      .field { margin-bottom: 10px; }
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      input, select, button {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        min-height: 44px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        font-size: 16px;
+        background: #fff;
+      }
+      button {
+        border: none;
+        background: linear-gradient(90deg, var(--accent), #109a7e);
+        color: #fff;
+        font-weight: 700;
+      }
+      .list-title {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .group {
+        margin: 12px 0;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+      }
+      .row {
+        display: block;
+        font-size: 14px;
+        border-top: 1px dashed var(--line);
+        padding: 8px 0;
+      }
+      .row:first-of-type { border-top: 0; }
+      .muted { color: #606b6f; font-size: 13px; }
+      .err { color: #c23131; font-size: 13px; min-height: 1.2em; }
+      .divider {
+        border: 0;
+        border-top: 1px solid var(--line);
+        margin: 12px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <div class="header">
+          <h1>過去ログ一覧</h1>
+          <div class="menu-wrap">
+            <button id="menuBtn" class="menu-btn" type="button" aria-label="メニュー">☰</button>
+            <div id="menuPanel" class="menu-panel hidden">
+              <button id="mainPageBtn" class="menu-item" type="button">トレーニング記録</button>
+              <button id="historyPageBtn" class="menu-item" type="button">過去ログ一覧</button>
+              <button id="gearPageBtn" class="menu-item" type="button">ギア管理</button>
+              <button id="coefficientsBtn" class="menu-item" type="button">係数</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="yearMonth">年月</label>
+          <input id="yearMonth" type="month" />
+        </div>
+
+        <div class="field">
+          <label for="item">種目</label>
+          <select id="item">
+            <option value="">指定なし</option>
+          </select>
+        </div>
+
+        <button id="filterBtn" type="button">絞り込み</button>
+        <p class="err" id="error"></p>
+        <hr class="divider" />
+
+        <div class="list-title">記録一覧</div>
+        <div id="logs"></div>
+      </section>
+    </main>
+
+    <script>
+      const menuBtn = document.getElementById("menuBtn");
+      const menuPanel = document.getElementById("menuPanel");
+      const mainPageBtn = document.getElementById("mainPageBtn");
+      const historyPageBtn = document.getElementById("historyPageBtn");
+      const gearPageBtn = document.getElementById("gearPageBtn");
+      const coefficientsBtn = document.getElementById("coefficientsBtn");
+      const itemEl = document.getElementById("item");
+      const yearMonthEl = document.getElementById("yearMonth");
+      const filterBtn = document.getElementById("filterBtn");
+      const logsEl = document.getElementById("logs");
+      const errorEl = document.getElementById("error");
+
+      let allLogs = [];
+
+      function byDateGroups(logs) {
+        const groups = new Map();
+        for (const log of logs) {
+          const day = String(log.created_at || "").slice(0, 10);
+          if (!groups.has(day)) groups.set(day, []);
+          groups.get(day).push(log);
+        }
+        return [...groups.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
+      }
+
+      function renderLogs(logs) {
+        if (!logs.length) {
+          logsEl.innerHTML = '<div class="group"><div class="muted">表示できる記録がありません。</div></div>';
+          return;
+        }
+
+        logsEl.innerHTML = byDateGroups(logs).map(([date, rows]) => `
+          <div class="group">
+            <div><strong>${date}</strong></div>
+            ${rows.map((r) => `
+              <div class="row">
+                ${
+                  r.category === "Training"
+                    ? (r.item === "ラン"
+                        ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts</span>`
+                        : r.item === "バイク"
+                          ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts</span>`
+                          : `${r.item}<br><span class="muted">${r.weight}kg / ${r.reps}回 / ${r.score}pts</span>`)
+                    : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts</span>`
+                }
+              </div>
+            `).join("")}
+          </div>
+        `).join("");
+      }
+
+      function renderItems(trainingItems, rewardItems) {
+        const items = [...new Set([...(trainingItems || []), ...(rewardItems || [])])]
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, "ja"));
+
+        itemEl.innerHTML =
+          '<option value="">指定なし</option>' +
+          items.map((item) => `<option value="${item}">${item}</option>`).join("");
+      }
+
+      async function loadOptions() {
+        const res = await fetch("/api/options");
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "種目一覧の取得に失敗しました");
+        }
+
+        const data = await res.json();
+        renderItems(data.trainingItems, data.rewardItems);
+      }
+
+      async function loadLogs() {
+        const res = await fetch("/api/summary");
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "記録一覧の取得に失敗しました");
+        }
+
+        const data = await res.json();
+        allLogs = Array.isArray(data.logs) ? data.logs : [];
+        renderLogs(allLogs);
+      }
+
+      function filterLogs() {
+        errorEl.textContent = "";
+
+        const yearMonth = yearMonthEl.value;
+        const item = itemEl.value;
+
+        const filtered = allLogs.filter((log) => {
+          const byYearMonth = yearMonth ? String(log.created_at || "").slice(0, 7) === yearMonth : true;
+          const byItem = item ? log.item === item : true;
+          return byYearMonth && byItem;
+        });
+
+        renderLogs(filtered);
+      }
+
+      menuBtn.addEventListener("click", () => {
+        menuPanel.classList.toggle("hidden");
+      });
+      mainPageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/";
+      });
+      historyPageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+      });
+      gearPageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/gear.html";
+      });
+      coefficientsBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/coefficients.html";
+      });
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".menu-wrap")) {
+          menuPanel.classList.add("hidden");
+        }
+      });
+      filterBtn.addEventListener("click", filterLogs);
+
+      Promise.all([loadOptions(), loadLogs()]).catch((err) => {
+        errorEl.textContent = err?.message || "初期化に失敗しました";
+      });
+    </script>
+  </body>
+</html>

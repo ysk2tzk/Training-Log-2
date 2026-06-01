@@ -46,6 +46,19 @@ function asNumber(v, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function mapLogRow(r) {
+  return {
+    id: r.id,
+    category: r.category || "",
+    item: r.item || "",
+    weight: asNumber(r.weight, 0),
+    reps: asNumber(r.reps, 0),
+    gear: r.gear || "",
+    score: asNumber(r.score, 0),
+    created_at: r.created_at || ""
+  };
+}
+
 async function getCoefficient(category, item, date) {
   const findByName = async (name, useIlike = false) => {
     let q = supabase
@@ -82,7 +95,7 @@ app.get("/api/options", async (req, res) => {
     const [trainingRes, rewardRes, gearRes] = await Promise.all([
       supabase.from("log").select("item").eq("category", "Training").not("item", "is", null),
       supabase.from("log").select("item").eq("category", "Reward").not("item", "is", null),
-      supabase.from("gear").select("name, category").order("name", { ascending: true })
+      supabase.from("gear").select("name").order("name", { ascending: true })
     ]);
 
     if (trainingRes.error || rewardRes.error || gearRes.error) {
@@ -115,19 +128,104 @@ app.get("/api/summary", async (req, res) => {
 
     if (error) return res.status(500).json({ error: error.message });
 
-    const logs = (data || []).map((r) => ({
-      id: r.id,
-      category: r.category || "",
-      item: r.item || "",
-      weight: asNumber(r.weight, 0),
-      reps: asNumber(r.reps, 0),
-      gear: r.gear || "",
-      score: asNumber(r.score, 0),
-      created_at: r.created_at || ""
-    }));
+    const logs = (data || []).map(mapLogRow);
 
     const totalScore = logs.reduce((acc, r) => acc + asNumber(r.score, 0), 0);
     return res.json({ totalScore, logs });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/api/coefficients", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("new_coefficient")
+      .select("id, name, value, start_date, end_date")
+      .is("end_date", null)
+      .order("start_date", { ascending: false })
+      .order("id", { ascending: false });
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    const coefficients = (data || []).map((r) => ({
+      id: r.id,
+      name: r.name || "",
+      value: asNumber(r.value, 0),
+      start_date: r.start_date || "",
+      end_date: r.end_date || null
+    }));
+    const names = [...new Set(coefficients.map((r) => r.name).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ja"));
+
+    return res.json({ names, coefficients });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/coefficients", async (req, res) => {
+  try {
+    const { name, customName, value, start_date } = req.body;
+    const selectedName = String(name || "").trim();
+    const finalName = selectedName === "その他(自由入力)"
+      ? String(customName || "").trim()
+      : selectedName;
+    const startDate = String(start_date || "").slice(0, 10);
+    const coefficientValue = Number(value);
+
+    if (!finalName || !startDate) {
+      return res.status(400).json({ error: "name, start_date is required" });
+    }
+    if (!Number.isFinite(coefficientValue)) {
+      return res.status(400).json({ error: "value is required" });
+    }
+
+    if (selectedName !== "その他(自由入力)") {
+      const currentRes = await supabase
+        .from("new_coefficient")
+        .select("id, start_date")
+        .eq("name", finalName)
+        .is("end_date", null);
+
+      if (currentRes.error) return res.status(500).json({ error: currentRes.error.message });
+
+      const previousDate = new Date(`${startDate}T00:00:00Z`);
+      previousDate.setUTCDate(previousDate.getUTCDate() - 1);
+      const endDate = previousDate.toISOString().slice(0, 10);
+
+      for (const row of currentRes.data || []) {
+        const updateRes = await supabase
+          .from("new_coefficient")
+          .update({ end_date: endDate })
+          .eq("id", row.id);
+        if (updateRes.error) return res.status(500).json({ error: updateRes.error.message });
+      }
+    }
+
+    const maxIdRes = await supabase
+      .from("new_coefficient")
+      .select("id")
+      .order("id", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (maxIdRes.error) return res.status(500).json({ error: maxIdRes.error.message });
+
+    const nextId = asNumber(maxIdRes.data?.id, 0) + 1;
+
+    const inserted = await supabase
+      .from("new_coefficient")
+      .insert({
+        id: nextId,
+        name: finalName,
+        value: coefficientValue,
+        start_date: startDate,
+        end_date: null
+      })
+      .select("id")
+      .single();
+
+    if (inserted.error) return res.status(500).json({ error: inserted.error.message });
+    return res.json({ id: inserted.data.id });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
