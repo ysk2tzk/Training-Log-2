@@ -62,7 +62,7 @@ function mapLogRow(r) {
 async function getCoefficient(category, item, date) {
   const findByName = async (name, useIlike = false) => {
     let q = supabase
-      .from("new_coefficient")
+      .from("coefficient")
       .select("value")
       .lte("start_date", date)
       .or(`end_date.gt.${date},end_date.is.null`)
@@ -95,7 +95,7 @@ app.get("/api/options", async (req, res) => {
     const [trainingRes, rewardRes, gearRes] = await Promise.all([
       supabase.from("log").select("item").eq("category", "Training").not("item", "is", null),
       supabase.from("log").select("item").eq("category", "Reward").not("item", "is", null),
-      supabase.from("gear").select("name").order("name", { ascending: true })
+      supabase.from("gear").select("name, category").order("name", { ascending: true })
     ]);
 
     if (trainingRes.error || rewardRes.error || gearRes.error) {
@@ -140,7 +140,7 @@ app.get("/api/summary", async (req, res) => {
 app.get("/api/coefficients", async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from("new_coefficient")
+      .from("coefficient")
       .select("id, name, value, start_date, end_date")
       .is("end_date", null)
       .order("start_date", { ascending: false })
@@ -182,7 +182,7 @@ app.post("/api/coefficients", async (req, res) => {
 
     if (selectedName !== "その他(自由入力)") {
       const currentRes = await supabase
-        .from("new_coefficient")
+        .from("coefficient")
         .select("id, start_date")
         .eq("name", finalName)
         .is("end_date", null);
@@ -195,7 +195,7 @@ app.post("/api/coefficients", async (req, res) => {
 
       for (const row of currentRes.data || []) {
         const updateRes = await supabase
-          .from("new_coefficient")
+          .from("coefficient")
           .update({ end_date: endDate })
           .eq("id", row.id);
         if (updateRes.error) return res.status(500).json({ error: updateRes.error.message });
@@ -203,7 +203,7 @@ app.post("/api/coefficients", async (req, res) => {
     }
 
     const maxIdRes = await supabase
-      .from("new_coefficient")
+      .from("coefficient")
       .select("id")
       .order("id", { ascending: false })
       .limit(1)
@@ -213,7 +213,7 @@ app.post("/api/coefficients", async (req, res) => {
     const nextId = asNumber(maxIdRes.data?.id, 0) + 1;
 
     const inserted = await supabase
-      .from("new_coefficient")
+      .from("coefficient")
       .insert({
         id: nextId,
         name: finalName,

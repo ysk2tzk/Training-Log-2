@@ -128,6 +128,11 @@
         font-weight: 700;
       }
 
+      button:disabled {
+        cursor: wait;
+        opacity: 0.7;
+      }
+
       #totalScore {
         margin: 14px 0;
         font-size: 34px;
@@ -172,6 +177,12 @@
       .row:first-of-type { border-top: 0; }
       .muted { color: #606b6f; font-size: 13px; }
       .err { color: #c23131; font-size: 13px; min-height: 1.2em; }
+      .status {
+        color: var(--accent);
+        font-size: 13px;
+        min-height: 1.2em;
+        margin: 8px 0 0;
+      }
       .divider {
         border: 0;
         border-top: 1px solid var(--line);
@@ -227,6 +238,7 @@
         <div id="dynamicFields"></div>
 
         <button id="addBtn" type="button">追加</button>
+        <p class="status" id="status" aria-live="polite"></p>
         <p class="err" id="error"></p>
         <hr class="divider" />
 
@@ -249,6 +261,7 @@
       const totalScoreEl = document.getElementById("totalScore");
       const logsEl = document.getElementById("logs");
       const errorEl = document.getElementById("error");
+      const statusEl = document.getElementById("status");
       const menuBtn = document.getElementById("menuBtn");
       const menuPanel = document.getElementById("menuPanel");
       const mainPageBtn = document.getElementById("mainPageBtn");
@@ -258,6 +271,7 @@
 
       const OTHER = "その他(自由入力)";
       let options = { trainingItems: [], rewardItems: [], gears: [] };
+      let isSubmitting = false;
 
       dateEl.value = new Date().toISOString().slice(0, 10);
 
@@ -428,7 +442,13 @@
       }
 
       async function addLog() {
+        if (isSubmitting) return;
+
+        isSubmitting = true;
         errorEl.textContent = "";
+        statusEl.textContent = "追加中...";
+        addBtn.disabled = true;
+        addBtn.textContent = "追加中...";
         const cat = categoryEl.value;
         const item = itemEl.value;
         const body = {
@@ -441,21 +461,37 @@
           gear: document.getElementById("gear")?.value || ""
         };
 
-        const res = await fetch("/api/logs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
+        try {
+          const res = await fetch("/api/logs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
 
-        if (!res.ok) {
-          const err = await res.json();
-          errorEl.textContent = err.error || "保存に失敗しました";
-          return;
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            errorEl.textContent = err.error || "保存に失敗しました";
+            statusEl.textContent = "";
+            return;
+          }
+
+          await loadOptions();
+          await loadSummary();
+          renderDynamicFields();
+          statusEl.textContent = "追加しました";
+          window.setTimeout(() => {
+            if (statusEl.textContent === "追加しました") {
+              statusEl.textContent = "";
+            }
+          }, 2000);
+        } catch (err) {
+          errorEl.textContent = err?.message || "保存に失敗しました";
+          statusEl.textContent = "";
+        } finally {
+          isSubmitting = false;
+          addBtn.disabled = false;
+          addBtn.textContent = "追加";
         }
-
-        await loadOptions();
-        await loadSummary();
-        renderDynamicFields();
       }
 
       async function deleteLog(id) {
