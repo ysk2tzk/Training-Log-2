@@ -1,0 +1,16 @@
+{
+  "name": "Training Log",
+  "short_name": "Training Log",
+  "description": "トレーニング記録を管理するアプリ",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f1ea",
+  "theme_color": "#0c6b58",
+  "icons": [
+    {
+      "src": "/icon-training.png",
+      "type": "image/png"
+    }
+  ]
+}

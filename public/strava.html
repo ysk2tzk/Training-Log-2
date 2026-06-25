@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0c6b58" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/icon-training.png" />
+    <link rel="apple-touch-icon" href="/icon-training.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet" />
+    <title>Strava連携</title>
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --card: #fffdf8;
+        --ink: #1f2a2e;
+        --accent: #0c6b58;
+        --line: #d9d3c6;
+        --strava: #fc4c02;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+        background:
+          radial-gradient(circle at 10% 10%, #fff5d9 0%, transparent 45%),
+          radial-gradient(circle at 90% 0%, #d8efe9 0%, transparent 35%),
+          var(--bg);
+        color: var(--ink);
+      }
+      .page {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 16px 14px 28px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      }
+      h1 {
+        margin: 0;
+        font-size: 27px;
+        font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+        font-weight: 900;
+        letter-spacing: 0.01em;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 0 12px;
+      }
+      .menu-wrap { position: relative; }
+      .menu-btn {
+        width: 44px;
+        min-height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--ink);
+        font-size: 22px;
+        line-height: 1;
+        padding: 0;
+      }
+      .menu-panel {
+        position: absolute;
+        right: 0;
+        top: 50px;
+        min-width: 168px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        padding: 6px;
+      }
+      .menu-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: #fff;
+        color: var(--ink);
+        border: 0;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 14px;
+        white-space: nowrap;
+      }
+      .menu-item:hover { background: #f6f3eb; }
+      .hidden { display: none; }
+      .stack { display: grid; gap: 12px; }
+      .meta {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+        background: #fff;
+      }
+      .meta strong { display: block; margin-bottom: 4px; }
+      .muted { color: #606b6f; font-size: 13px; }
+      .status-pill {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .status-ok { background: #0c6b58; }
+      .status-off { background: #8c8c8c; }
+      .status-error { background: #c23131; }
+      .actions {
+        display: grid;
+        gap: 10px;
+      }
+      button, a.button-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 44px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        font-size: 16px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      button {
+        border: none;
+        background: linear-gradient(90deg, var(--accent), #109a7e);
+        color: #fff;
+      }
+      .button-link {
+        background: linear-gradient(90deg, var(--strava), #ff7a3c);
+        color: #fff;
+      }
+      button:disabled {
+        opacity: 0.7;
+        cursor: wait;
+      }
+      .err { color: #c23131; font-size: 13px; min-height: 1.2em; }
+      .note {
+        font-size: 13px;
+        color: #606b6f;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <div class="header">
+          <h1>Strava連携</h1>
+          <div class="menu-wrap">
+            <button id="menuBtn" class="menu-btn" type="button" aria-label="メニュー">☰</button>
+            <div id="menuPanel" class="menu-panel hidden">
+              <button id="mainPageBtn" class="menu-item" type="button">トレーニング記録</button>
+              <button id="historyBtn" class="menu-item" type="button">過去ログ一覧</button>
+              <button id="gearPageBtn" class="menu-item" type="button">ギア管理</button>
+              <button id="coefficientsBtn" class="menu-item" type="button">係数</button>
+              <button id="stravaPageBtn" class="menu-item" type="button">Strava連携</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div class="meta">
+            <strong>接続状態</strong>
+            <div id="connectionState" class="muted">読み込み中...</div>
+          </div>
+
+          <div class="meta">
+            <strong>同期状態</strong>
+            <div id="syncState" class="muted">読み込み中...</div>
+          </div>
+
+          <div class="actions">
+            <a class="button-link" href="/api/strava/connect">Stravaに接続</a>
+            <button id="syncBtn" type="button">今すぐ同期</button>
+          </div>
+
+          <div class="note">
+            取得対象は 2026-06-01 以降の Run / Ride です。Vercel Hobby の cron では 1 日 1 回、22:00 JST 頃に同期される想定です。
+          </div>
+
+          <p id="error" class="err"></p>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const menuBtn = document.getElementById("menuBtn");
+      const menuPanel = document.getElementById("menuPanel");
+      const mainPageBtn = document.getElementById("mainPageBtn");
+      const historyBtn = document.getElementById("historyBtn");
+      const gearPageBtn = document.getElementById("gearPageBtn");
+      const coefficientsBtn = document.getElementById("coefficientsBtn");
+      const stravaPageBtn = document.getElementById("stravaPageBtn");
+      const connectionStateEl = document.getElementById("connectionState");
+      const syncStateEl = document.getElementById("syncState");
+      const syncBtn = document.getElementById("syncBtn");
+      const errorEl = document.getElementById("error");
+
+      function statusPill(label, statusClass) {
+        return `<span class="status-pill ${statusClass}">${label}</span>`;
+      }
+
+      function fmt(value) {
+        if (!value) return "なし";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+      }
+
+      function renderStatus(data) {
+        if (!data.configured) {
+          connectionStateEl.innerHTML = `${statusPill("未設定", "status-error")} Strava 環境変数が不足しています。`;
+          syncStateEl.textContent = "同期は実行できません。";
+          syncBtn.disabled = true;
+          return;
+        }
+        if (data.setup_required) {
+          connectionStateEl.innerHTML = `${statusPill("要セットアップ", "status-error")} Supabase に Strava 用テーブルを追加してください。`;
+          syncStateEl.textContent = "strava-setup.sql の適用後に接続できます。";
+          syncBtn.disabled = true;
+          return;
+        }
+
+        connectionStateEl.innerHTML = data.connected
+          ? `${statusPill("接続済み", "status-ok")} athlete_id: ${data.athlete_id || "不明"} / token期限: ${fmt(data.token_expires_at)}`
+          : `${statusPill("未接続", "status-off")} Strava の OAuth 接続が必要です。`;
+
+        if (data.last_sync_status === "success") {
+          syncStateEl.innerHTML = `${statusPill("成功", "status-ok")} 最終同期: ${fmt(data.last_sync_at)}`;
+        } else if (data.last_sync_status === "error") {
+          syncStateEl.innerHTML = `${statusPill("失敗", "status-error")} 最終同期: ${fmt(data.last_sync_at)} / ${data.last_sync_error || "不明なエラー"}`;
+        } else {
+          syncStateEl.innerHTML = `${statusPill("未実行", "status-off")} まだ同期履歴がありません。`;
+        }
+
+        syncBtn.disabled = !data.connected;
+      }
+
+      async function loadStatus() {
+        const res = await fetch("/api/strava/status");
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Strava 状態の取得に失敗しました");
+        }
+        const data = await res.json();
+        renderStatus(data);
+      }
+
+      async function runSync() {
+        errorEl.textContent = "";
+        syncBtn.disabled = true;
+        syncBtn.textContent = "同期中...";
+
+        try {
+          const res = await fetch("/api/strava/sync", { method: "POST" });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data.error || "同期に失敗しました");
+          }
+
+          await loadStatus();
+          syncStateEl.innerHTML += ` / 取得: ${data.fetchedCount}件, 追加: ${data.insertedCount}件`;
+        } catch (err) {
+          errorEl.textContent = err?.message || "同期に失敗しました";
+          await loadStatus().catch(() => {});
+        } finally {
+          syncBtn.textContent = "今すぐ同期";
+        }
+      }
+
+      menuBtn.addEventListener("click", () => {
+        menuPanel.classList.toggle("hidden");
+      });
+      mainPageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/";
+      });
+      historyBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/history.html";
+      });
+      gearPageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/gear.html";
+      });
+      coefficientsBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/coefficients.html";
+      });
+      stravaPageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+      });
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".menu-wrap")) {
+          menuPanel.classList.add("hidden");
+        }
+      });
+      syncBtn.addEventListener("click", runSync);
+
+      loadStatus().catch((err) => {
+        errorEl.textContent = err?.message || "初期化に失敗しました";
+      });
+    </script>
+  </body>
+</html>

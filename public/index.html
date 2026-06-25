@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0c6b58" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/icon-training.png" />
+    <link rel="apple-touch-icon" href="/icon-training.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet" />
@@ -176,6 +180,17 @@
 
       .row:first-of-type { border-top: 0; }
       .muted { color: #606b6f; font-size: 13px; }
+      .source-badge {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: #fc4c02;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        vertical-align: middle;
+      }
       .err { color: #c23131; font-size: 13px; min-height: 1.2em; }
       .status {
         color: var(--accent);
@@ -210,6 +225,7 @@
               <button id="historyBtn" class="menu-item" type="button">過去ログ一覧</button>
               <button id="gearManageBtn" class="menu-item" type="button">ギア管理</button>
               <button id="coefficientsBtn" class="menu-item" type="button">係数</button>
+              <button id="stravaBtn" class="menu-item" type="button">Strava連携</button>
             </div>
           </div>
         </div>
@@ -268,6 +284,7 @@
       const historyBtn = document.getElementById("historyBtn");
       const coefficientsBtn = document.getElementById("coefficientsBtn");
       const gearManageBtn = document.getElementById("gearManageBtn");
+      const stravaBtn = document.getElementById("stravaBtn");
 
       const OTHER = "その他(自由入力)";
       let options = { trainingItems: [], rewardItems: [], gears: [] };
@@ -399,10 +416,10 @@
                 <div>${
                   r.category === "Training"
                     ? (r.item === "ラン"
-                        ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts</span>`
+                        ? `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts</span>`
                         : r.item === "バイク"
-                          ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts</span>`
-                        : `${r.item}<br><span class="muted">${r.weight}kg / ${r.reps}回 / ${r.score}pts</span>`)
+                          ? `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts</span>`
+                          : `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}<br><span class="muted">${r.weight}kg / ${r.reps}回 / ${r.score}pts</span>`)
                     : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts</span>`
                 }</div>
                 <div><button class="delete-btn" type="button" data-log-id="${r.id}">削除</button></div>
@@ -536,6 +553,10 @@
       gearManageBtn.addEventListener("click", () => {
         menuPanel.classList.add("hidden");
         window.location.href = "/gear.html";
+      });
+      stravaBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/strava.html";
       });
       document.addEventListener("click", (e) => {
         if (!e.target.closest(".menu-wrap")) {

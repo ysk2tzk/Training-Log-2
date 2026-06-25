@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0c6b58" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/icon-training.png" />
+    <link rel="apple-touch-icon" href="/icon-training.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet" />
@@ -160,6 +164,7 @@
               <button id="historyBtn" class="menu-item" type="button">過去ログ一覧</button>
               <button id="gearPageBtn" class="menu-item" type="button">ギア管理</button>
               <button id="coefficientsBtn" class="menu-item" type="button">係数</button>
+              <button id="stravaBtn" class="menu-item" type="button">Strava連携</button>
             </div>
           </div>
         </div>
@@ -196,6 +201,7 @@
       const historyBtn = document.getElementById("historyBtn");
       const gearPageBtn = document.getElementById("gearPageBtn");
       const coefficientsBtn = document.getElementById("coefficientsBtn");
+      const stravaBtn = document.getElementById("stravaBtn");
       const gearNameEl = document.getElementById("gearName");
       const startDateEl = document.getElementById("startDate");
       const addGearBtn = document.getElementById("addGearBtn");
@@ -306,6 +312,10 @@
       coefficientsBtn.addEventListener("click", () => {
         menuPanel.classList.add("hidden");
         window.location.href = "/coefficients.html";
+      });
+      stravaBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/strava.html";
       });
       document.addEventListener("click", (e) => {
         if (!e.target.closest(".menu-wrap")) menuPanel.classList.add("hidden");
