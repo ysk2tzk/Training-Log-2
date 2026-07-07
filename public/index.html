@@ -108,7 +108,7 @@
         font-size: 14px;
       }
 
-      input, select, button {
+      input, select, textarea, button {
         width: 100%;
         max-width: 100%;
         min-width: 0;
@@ -123,6 +123,11 @@
       input[type="date"] {
         -webkit-appearance: none;
         appearance: none;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 88px;
       }
 
       button {
@@ -330,6 +335,15 @@
         `;
       }
 
+      function textareaHtml(id, label, placeholder) {
+        return `
+          <div class="field">
+            <label for="${id}">${label}</label>
+            <textarea id="${id}" placeholder="${placeholder}"></textarea>
+          </div>
+        `;
+      }
+
       function getGearOptionsForItem(item) {
         const allGears = (options.gears || []).map((g) => ({
           name: typeof g === "string" ? g : g.name,
@@ -369,7 +383,8 @@
             const gearOptions = getGearOptionsForItem(item);
             dynamicFieldsEl.innerHTML =
               fieldHtml("reps", repsLabel, "number", repsPlaceholder) +
-              selectHtml("gear", "Gear", gearOptions);
+              selectHtml("gear", "Gear", gearOptions) +
+              textareaHtml("remarks", "備考", "メモ");
             return;
           }
 
@@ -379,20 +394,23 @@
               fieldHtml("customItem", "", "text", "アイテム名") +
               fieldHtml("weight", "Weight", "number", "0.0kg") +
               fieldHtml("reps", "Reps", "number", "回") +
-              selectHtml("gear", "Gear", gearOptions);
+              selectHtml("gear", "Gear", gearOptions) +
+              textareaHtml("remarks", "備考", "メモ");
             return;
           }
 
           dynamicFieldsEl.innerHTML =
             fieldHtml("weight", "Weight", "number", "0.0kg") +
-            fieldHtml("reps", "Reps", "number", "回");
+            fieldHtml("reps", "Reps", "number", "回") +
+            textareaHtml("remarks", "備考", "メモ");
           return;
         }
 
         if (cat === "Reward") {
           dynamicFieldsEl.innerHTML =
             (isOther ? fieldHtml("customItem", "", "text", "アイテム名") : "") +
-            fieldHtml("reps", "価格", "number", "円");
+            fieldHtml("reps", "価格", "number", "円") +
+            textareaHtml("remarks", "備考", "メモ");
         }
       }
 
@@ -419,8 +437,12 @@
                         ? `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts</span>`
                         : r.item === "バイク"
                           ? `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts</span>`
-                          : `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}<br><span class="muted">${r.weight}kg / ${r.reps}回 / ${r.score}pts</span>`)
-                    : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts</span>`
+                          : `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}<br><span class="muted">${r.weight > 0 ? `${r.weight}kg / ` : ""}${r.reps}回 / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`)
+                    : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`
+                }${
+                  r.category === "Training" && (r.item === "ラン" || r.item === "バイク") && r.remarks
+                    ? `<br><span class="muted">${r.remarks}</span>`
+                    : ""
                 }</div>
                 <div><button class="delete-btn" type="button" data-log-id="${r.id}">削除</button></div>
               </div>
@@ -473,9 +495,10 @@
           category: cat,
           item,
           customItem: document.getElementById("customItem")?.value || "",
-          weight: document.getElementById("weight")?.value || 0,
+          weight: document.getElementById("weight")?.value ?? "",
           reps: document.getElementById("reps")?.value || 0,
-          gear: document.getElementById("gear")?.value || ""
+          gear: document.getElementById("gear")?.value || "",
+          remarks: document.getElementById("remarks")?.value || ""
         };
 
         try {

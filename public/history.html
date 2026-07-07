@@ -238,11 +238,11 @@
                 ${
                   r.category === "Training"
                     ? (r.item === "ラン"
-                        ? `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts</span>`
+                        ? `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`
                         : r.item === "バイク"
-                          ? `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts</span>`
-                          : `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}<br><span class="muted">${r.weight}kg / ${r.reps}回 / ${r.score}pts</span>`)
-                    : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts</span>`
+                          ? `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`
+                          : `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}<br><span class="muted">${r.weight > 0 ? `${r.weight}kg / ` : ""}${r.reps}回 / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`)
+                    : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`
                 }
               </div>
             `).join("")}

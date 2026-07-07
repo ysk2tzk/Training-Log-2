@@ -56,6 +56,10 @@ function asNumber(v, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function isBlank(value) {
+  return value == null || String(value).trim() === "";
+}
+
 function mapLogRow(r) {
   return {
     id: r.id,
@@ -64,6 +68,7 @@ function mapLogRow(r) {
     weight: asNumber(r.weight, 0),
     reps: asNumber(r.reps, 0),
     gear: r.gear || "",
+    remarks: r.remarks || "",
     score: asNumber(r.score, 0),
     created_at: r.created_at || "",
     source: r.source || "manual",
@@ -307,6 +312,7 @@ async function insertTrainingLog({
   item,
   reps,
   gear,
+  remarks = "",
   gearDistanceDelta = null,
   source = "manual",
   sourceActivityId = null,
@@ -326,6 +332,7 @@ async function insertTrainingLog({
     weight: 0,
     reps: asNumber(reps, 0),
     gear: normalizedGear,
+    remarks,
     score,
     created_at: date,
     source,
@@ -487,7 +494,7 @@ app.get("/api/summary", async (req, res) => {
   try {
     let summaryRes = await supabase
       .from("log")
-      .select("id, category, item, weight, reps, gear, score, created_at, source, duration_seconds")
+      .select("id, category, item, weight, reps, gear, remarks, score, created_at, source, duration_seconds")
       .order("created_at", { ascending: false })
       .order("id", { ascending: false });
 
@@ -606,15 +613,17 @@ app.post("/api/coefficients", async (req, res) => {
 
 app.post("/api/logs", async (req, res) => {
   try {
-    const { date, category, item, customItem, weight, reps, gear } = req.body;
+    const { date, category, item, customItem, weight, reps, gear, remarks } = req.body;
     if (!date || !category || !item) {
       return res.status(400).json({ error: "date, category, item is required" });
     }
 
     const finalItem = item === "その他(自由入力)" ? String(customItem || "").trim() : item;
     if (!finalItem) return res.status(400).json({ error: "item is empty" });
+    const normalizedRemarks = String(remarks || "").trim();
 
     const repsNum = asNumber(reps, 0);
+    const hasWeightInput = !isBlank(weight);
     const weightNum = asNumber(weight, 0);
     const coef = await getCoefficient(category, finalItem, date);
 
@@ -629,6 +638,7 @@ app.post("/api/logs", async (req, res) => {
           item: finalItem,
           reps: repsNum,
           gear: gear || "",
+          remarks: normalizedRemarks,
           gearDistanceDelta: repsNum,
           source: "manual",
           sourceActivityId: null,
@@ -636,9 +646,11 @@ app.post("/api/logs", async (req, res) => {
         });
         return res.json({ id: inserted.id, score: inserted.score });
       } else {
-        logWeight = weightNum;
+        logWeight = hasWeightInput ? weightNum : 0;
         logGear = "";
-        score = Math.round(repsNum * coef * weightNum);
+        score = hasWeightInput
+          ? Math.round(repsNum * coef * weightNum)
+          : Math.round(repsNum * coef);
       }
     } else if (category === "Reward") {
       logWeight = 0;
@@ -654,6 +666,7 @@ app.post("/api/logs", async (req, res) => {
       weight: logWeight,
       reps: repsNum,
       gear: logGear,
+      remarks: normalizedRemarks,
       score,
       created_at: date,
       source: "manual",
@@ -668,6 +681,7 @@ app.post("/api/logs", async (req, res) => {
         weight: logWeight,
         reps: repsNum,
         gear: logGear,
+        remarks: normalizedRemarks,
         score,
         created_at: date
       }).select("id").single();
