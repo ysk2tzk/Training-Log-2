@@ -292,6 +292,41 @@
       const stravaBtn = document.getElementById("stravaBtn");
 
       const OTHER = "その他(自由入力)";
+      const DEFAULT_TRAINING_FIELDS = {
+        showWeight: true,
+        repsLabel: "Reps",
+        repsPlaceholder: "回",
+        showGear: false,
+        showRemarks: true
+      };
+      const ITEM_FIELD_CONFIGS = {
+        ラン: {
+          showWeight: false,
+          repsLabel: "距離",
+          repsPlaceholder: "0.0km",
+          showGear: true,
+          showRemarks: true
+        },
+        バイク: {
+          showWeight: false,
+          repsLabel: "継続時間",
+          repsPlaceholder: "min",
+          showGear: true,
+          showRemarks: true
+        },
+        トレッドミル: {
+          showWeight: false,
+          repsLabel: "距離",
+          repsPlaceholder: "0.0km",
+          showGear: true,
+          showRemarks: true
+        }
+      };
+      const REWARD_FIELD_CONFIG = {
+        repsLabel: "価格",
+        repsPlaceholder: "円",
+        showRemarks: true
+      };
       let options = { trainingItems: [], rewardItems: [], gears: [] };
       let isSubmitting = false;
 
@@ -367,6 +402,13 @@
         return allGears.map((g) => g.name).filter(Boolean);
       }
 
+      function getTrainingFieldConfig(item) {
+        return {
+          ...DEFAULT_TRAINING_FIELDS,
+          ...(ITEM_FIELD_CONFIGS[item] || {})
+        };
+      }
+
       function renderDynamicFields() {
         const cat = categoryEl.value;
         const item = itemEl.value;
@@ -377,40 +419,36 @@
         }
 
         if (cat === "Training") {
-          if (item === "ラン" || item === "バイク") {
-            const repsPlaceholder = item === "バイク" ? "min" : "0.0km";
-            const repsLabel = item === "バイク" ? "継続時間" : "距離";
-            const gearOptions = getGearOptionsForItem(item);
-            dynamicFieldsEl.innerHTML =
-              fieldHtml("reps", repsLabel, "number", repsPlaceholder) +
-              selectHtml("gear", "Gear", gearOptions) +
-              textareaHtml("remarks", "備考", "メモ");
-            return;
-          }
+          const config = isOther ? DEFAULT_TRAINING_FIELDS : getTrainingFieldConfig(item);
+          const fields = [];
 
           if (isOther) {
-            const gearOptions = getGearOptionsForItem(item);
-            dynamicFieldsEl.innerHTML =
-              fieldHtml("customItem", "", "text", "アイテム名") +
-              fieldHtml("weight", "Weight", "number", "0.0kg") +
-              fieldHtml("reps", "Reps", "number", "回") +
-              selectHtml("gear", "Gear", gearOptions) +
-              textareaHtml("remarks", "備考", "メモ");
-            return;
+            fields.push(fieldHtml("customItem", "", "text", "アイテム名"));
           }
 
-          dynamicFieldsEl.innerHTML =
-            fieldHtml("weight", "Weight", "number", "0.0kg") +
-            fieldHtml("reps", "Reps", "number", "回") +
-            textareaHtml("remarks", "備考", "メモ");
+          if (config.showWeight) {
+            fields.push(fieldHtml("weight", "Weight", "number", "0.0kg"));
+          }
+
+          fields.push(fieldHtml("reps", config.repsLabel, "number", config.repsPlaceholder));
+
+          if (config.showGear) {
+            fields.push(selectHtml("gear", "Gear", getGearOptionsForItem(item)));
+          }
+
+          if (config.showRemarks) {
+            fields.push(textareaHtml("remarks", "備考", "メモ"));
+          }
+
+          dynamicFieldsEl.innerHTML = fields.join("");
           return;
         }
 
         if (cat === "Reward") {
           dynamicFieldsEl.innerHTML =
             (isOther ? fieldHtml("customItem", "", "text", "アイテム名") : "") +
-            fieldHtml("reps", "価格", "number", "円") +
-            textareaHtml("remarks", "備考", "メモ");
+            fieldHtml("reps", REWARD_FIELD_CONFIG.repsLabel, "number", REWARD_FIELD_CONFIG.repsPlaceholder) +
+            (REWARD_FIELD_CONFIG.showRemarks ? textareaHtml("remarks", "備考", "メモ") : "");
         }
       }
 
