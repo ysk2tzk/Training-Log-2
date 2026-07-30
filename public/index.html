@@ -185,17 +185,6 @@
 
       .row:first-of-type { border-top: 0; }
       .muted { color: #606b6f; font-size: 13px; }
-      .source-badge {
-        display: inline-block;
-        margin-left: 6px;
-        padding: 2px 7px;
-        border-radius: 999px;
-        background: #fc4c02;
-        color: #fff;
-        font-size: 11px;
-        font-weight: 700;
-        vertical-align: middle;
-      }
       .err { color: #c23131; font-size: 13px; min-height: 1.2em; }
       .status {
         color: var(--accent);
@@ -230,7 +219,7 @@
               <button id="historyBtn" class="menu-item" type="button">過去ログ一覧</button>
               <button id="gearManageBtn" class="menu-item" type="button">ギア管理</button>
               <button id="coefficientsBtn" class="menu-item" type="button">係数</button>
-              <button id="stravaBtn" class="menu-item" type="button">Strava連携</button>
+              <button id="suuntoBtn" class="menu-item" type="button">Suunto連携テスト</button>
             </div>
           </div>
         </div>
@@ -289,7 +278,7 @@
       const historyBtn = document.getElementById("historyBtn");
       const coefficientsBtn = document.getElementById("coefficientsBtn");
       const gearManageBtn = document.getElementById("gearManageBtn");
-      const stravaBtn = document.getElementById("stravaBtn");
+      const suuntoBtn = document.getElementById("suuntoBtn");
 
       const OTHER = "その他(自由入力)";
       const DEFAULT_TRAINING_FIELDS = {
@@ -472,10 +461,10 @@
                 <div>${
                   r.category === "Training"
                     ? (r.item === "ラン"
-                        ? `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts</span>`
+                        ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts</span>`
                         : r.item === "バイク"
-                          ? `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts</span>`
-                          : `${r.item}${r.source === "strava" ? '<span class="source-badge">Strava</span>' : ""}<br><span class="muted">${r.weight > 0 ? `${r.weight}kg / ` : ""}${r.reps}回 / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`)
+                          ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts</span>`
+                          : `${r.item}<br><span class="muted">${r.weight > 0 ? `${r.weight}kg / ` : ""}${r.reps}回 / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`)
                     : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`
                 }${
                   r.category === "Training" && (r.item === "ラン" || r.item === "バイク") && r.remarks
@@ -615,9 +604,9 @@
         menuPanel.classList.add("hidden");
         window.location.href = "/gear.html";
       });
-      stravaBtn.addEventListener("click", () => {
+      suuntoBtn.addEventListener("click", () => {
         menuPanel.classList.add("hidden");
-        window.location.href = "/strava.html";
+        window.location.href = "/suunto.html";
       });
       document.addEventListener("click", (e) => {
         if (!e.target.closest(".menu-wrap")) {

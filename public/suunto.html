@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0c6b58" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/icon-training.png" />
+    <link rel="apple-touch-icon" href="/icon-training.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet" />
+    <title>Suunto連携テスト</title>
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --card: #fffdf8;
+        --ink: #1f2a2e;
+        --accent: #0c6b58;
+        --accent-soft: #d8efe9;
+        --line: #d9d3c6;
+        --warn: #b36d13;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+        background:
+          radial-gradient(circle at 10% 10%, #fff5d9 0%, transparent 45%),
+          radial-gradient(circle at 90% 0%, #d8efe9 0%, transparent 35%),
+          var(--bg);
+        color: var(--ink);
+      }
+      .page {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 16px 14px 28px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      }
+      h1 {
+        margin: 0;
+        font-size: 27px;
+        font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+        font-weight: 900;
+        letter-spacing: 0.01em;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 0 12px;
+      }
+      .menu-wrap { position: relative; }
+      .menu-btn {
+        width: 44px;
+        min-height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--ink);
+        font-size: 22px;
+        line-height: 1;
+        padding: 0;
+      }
+      .menu-panel {
+        position: absolute;
+        right: 0;
+        top: 50px;
+        min-width: 168px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        padding: 6px;
+      }
+      .menu-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: #fff;
+        color: var(--ink);
+        border: 0;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 14px;
+        white-space: nowrap;
+      }
+      .menu-item:hover { background: #f6f3eb; }
+      .hidden { display: none; }
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+      .section {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+        background: #fff;
+      }
+      .section h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      .lead {
+        margin: 0;
+        color: #4d5a5f;
+        line-height: 1.7;
+      }
+      .pill {
+        display: inline-block;
+        padding: 4px 9px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .pill-ready {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .pill-warn {
+        background: #fff4df;
+        color: var(--warn);
+      }
+      .list {
+        margin: 0;
+        padding-left: 18px;
+        line-height: 1.8;
+      }
+      .placeholder {
+        min-height: 52px;
+        border: 1px dashed var(--line);
+        border-radius: 12px;
+        padding: 12px;
+        background: #fcfbf7;
+        color: #606b6f;
+      }
+      .field { margin-bottom: 10px; }
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      input, textarea, button {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        font-size: 16px;
+        background: #fff;
+      }
+      input, button {
+        min-height: 44px;
+      }
+      textarea {
+        min-height: 240px;
+        resize: vertical;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        line-height: 1.5;
+      }
+      button {
+        border: none;
+        background: linear-gradient(90deg, var(--accent), #109a7e);
+        color: #fff;
+        font-weight: 700;
+      }
+      button:disabled {
+        opacity: 0.7;
+        cursor: wait;
+      }
+      .hint {
+        margin: 6px 0 0;
+        color: #606b6f;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      .meta {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+        background: #fff;
+      }
+      .meta strong { display: block; margin-bottom: 4px; }
+      .status-pill {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .status-ok { background: #0c6b58; }
+      .status-off { background: #8c8c8c; }
+      .status-error { background: #c23131; }
+      .err {
+        margin: 8px 0 0;
+        color: #c23131;
+        font-size: 13px;
+        min-height: 1.2em;
+      }
+      .button-row {
+        display: grid;
+        gap: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <div class="header">
+          <h1>Suunto連携テスト</h1>
+          <div class="menu-wrap">
+            <button id="menuBtn" class="menu-btn" type="button" aria-label="メニュー">☰</button>
+            <div id="menuPanel" class="menu-panel hidden">
+              <button id="mainPageBtn" class="menu-item" type="button">トレーニング記録</button>
+              <button id="historyBtn" class="menu-item" type="button">過去ログ一覧</button>
+              <button id="gearPageBtn" class="menu-item" type="button">ギア管理</button>
+              <button id="coefficientsBtn" class="menu-item" type="button">係数</button>
+              <button id="suuntoPageBtn" class="menu-item" type="button">Suunto連携テスト</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <section class="section">
+            <span class="pill pill-ready">隔離されたテストページ</span>
+            <p class="lead">
+              このページは Suunto 連携の試験用です。既存の記録・ギア・係数には触れず、ここから段階的に接続UIや動作確認を追加していけます。
+            </p>
+          </section>
+
+          <section class="section">
+            <h2>接続状態</h2>
+            <div class="meta">
+              <strong>OAuth</strong>
+              <div id="connectionState" class="hint">読み込み中...</div>
+            </div>
+            <div class="field" style="margin-top: 10px;">
+              <button id="connectBtn" type="button">Suuntoに接続</button>
+              <p class="hint">必要な環境変数がそろっていれば、Suuntoの認可画面へ進みます。</p>
+              <p id="statusError" class="err"></p>
+            </div>
+          </section>
+
+          <section class="section">
+            <h2>エクササイズ確認</h2>
+            <div class="field">
+              <label for="subscriptionKey">Subscription Key</label>
+              <input id="subscriptionKey" type="password" placeholder="Ocp-Apim-Subscription-Key" />
+              <p class="hint">未入力ならサーバー環境変数 `SUUNTO_SUBSCRIPTION_KEY` を使います。</p>
+            </div>
+            <div class="field">
+              <label for="accessToken">Access Token</label>
+              <input id="accessToken" type="password" placeholder="Bearer に使うJWTトークン" />
+              <p class="hint">未入力ならサーバー環境変数 `SUUNTO_ACCESS_TOKEN` を使います。</p>
+            </div>
+            <div class="button-row">
+              <button id="fetchLatestExercisesBtn" type="button">最新5件のエクササイズを確認</button>
+            </div>
+            <p id="fetchError" class="err"></p>
+            <div class="field">
+              <label for="exerciseResult">確認結果</label>
+              <textarea id="exerciseResult" readonly placeholder="ここに最新5件のJSONが表示されます"></textarea>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const menuBtn = document.getElementById("menuBtn");
+      const menuPanel = document.getElementById("menuPanel");
+      const mainPageBtn = document.getElementById("mainPageBtn");
+      const historyBtn = document.getElementById("historyBtn");
+      const gearPageBtn = document.getElementById("gearPageBtn");
+      const coefficientsBtn = document.getElementById("coefficientsBtn");
+      const suuntoPageBtn = document.getElementById("suuntoPageBtn");
+      const subscriptionKeyEl = document.getElementById("subscriptionKey");
+      const accessTokenEl = document.getElementById("accessToken");
+      const fetchLatestExercisesBtn = document.getElementById("fetchLatestExercisesBtn");
+      const fetchErrorEl = document.getElementById("fetchError");
+      const exerciseResultEl = document.getElementById("exerciseResult");
+      const connectionStateEl = document.getElementById("connectionState");
+      const connectBtn = document.getElementById("connectBtn");
+      const statusErrorEl = document.getElementById("statusError");
+
+      function statusPill(label, statusClass) {
+        return `<span class="status-pill ${statusClass}">${label}</span>`;
+      }
+
+      function fmt(value) {
+        if (!value) return "なし";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+      }
+
+      function renderStatus(data) {
+        if (!data.configured) {
+          connectionStateEl.innerHTML = `${statusPill("未設定", "status-error")} OAuthに必要な環境変数が不足しています。`;
+          connectBtn.disabled = true;
+          return;
+        }
+
+        if (data.connected) {
+          connectionStateEl.innerHTML =
+            `${statusPill("接続済み", "status-ok")} user: ${data.user || "不明"} / 接続日時: ${fmt(data.connected_at)} / 期限: ${fmt(data.token_expires_at)}`;
+        } else {
+          connectionStateEl.innerHTML = `${statusPill("未接続", "status-off")} Suuntoの認可をまだ実行していません。`;
+        }
+
+        connectBtn.disabled = false;
+      }
+
+      function renderExerciseResult(data) {
+        exerciseResultEl.value = JSON.stringify(data, null, 2);
+      }
+
+      function getSuuntoCredentials() {
+        return {
+          subscriptionKey: subscriptionKeyEl.value.trim(),
+          accessToken: accessTokenEl.value.trim()
+        };
+      }
+
+      function pickWorkoutTime(workout) {
+        const candidates = [
+          workout?.startTime,
+          workout?.start_time,
+          workout?.startDateTime,
+          workout?.start_date_time,
+          workout?.dateTime,
+          workout?.localStartTime,
+          workout?.createdAt,
+          workout?.created_at
+        ];
+
+        for (const candidate of candidates) {
+          if (!candidate) continue;
+          const time = new Date(candidate).getTime();
+          if (Number.isFinite(time)) return time;
+        }
+
+        return 0;
+      }
+
+      async function loadStatus() {
+        const res = await fetch("/api/suunto/status");
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || "Suunto状態の取得に失敗しました");
+        }
+        renderStatus(data);
+        return data;
+      }
+
+      async function fetchLatestExercises() {
+        fetchErrorEl.textContent = "";
+        fetchLatestExercisesBtn.disabled = true;
+        fetchLatestExercisesBtn.textContent = "取得中...";
+
+        try {
+          const res = await fetch("/api/suunto/workouts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(getSuuntoCredentials())
+          });
+
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data.error || "最新エクササイズの取得に失敗しました");
+          }
+
+          const workouts = Array.isArray(data.workouts) ? data.workouts.slice() : [];
+          workouts.sort((a, b) => pickWorkoutTime(b) - pickWorkoutTime(a));
+
+          renderExerciseResult({
+            count: Math.min(workouts.length, 5),
+            workouts: workouts.slice(0, 5)
+          });
+        } catch (error) {
+          fetchErrorEl.textContent = error?.message || "最新エクササイズの取得に失敗しました";
+        } finally {
+          fetchLatestExercisesBtn.disabled = false;
+          fetchLatestExercisesBtn.textContent = "最新5件のエクササイズを確認";
+        }
+      }
+
+      connectBtn.addEventListener("click", () => {
+        statusErrorEl.textContent = "";
+        window.location.href = "/api/suunto/connect";
+      });
+
+      menuBtn.addEventListener("click", () => {
+        menuPanel.classList.toggle("hidden");
+      });
+      mainPageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/";
+      });
+      historyBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/history.html";
+      });
+      gearPageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/gear.html";
+      });
+      coefficientsBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/coefficients.html";
+      });
+      suuntoPageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+      });
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".menu-wrap")) {
+          menuPanel.classList.add("hidden");
+        }
+      });
+      fetchLatestExercisesBtn.addEventListener("click", fetchLatestExercises);
+      loadStatus()
+        .then(() => {
+        })
+        .catch((error) => {
+          statusErrorEl.textContent = error?.message || "Suunto状態の取得に失敗しました";
+        });
+    </script>
+  </body>
+</html>

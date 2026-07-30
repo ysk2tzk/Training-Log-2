@@ -164,7 +164,7 @@
               <button id="historyBtn" class="menu-item" type="button">過去ログ一覧</button>
               <button id="gearPageBtn" class="menu-item" type="button">ギア管理</button>
               <button id="coefficientsBtn" class="menu-item" type="button">係数</button>
-              <button id="stravaBtn" class="menu-item" type="button">Strava連携</button>
+              <button id="suuntoBtn" class="menu-item" type="button">Suunto連携テスト</button>
             </div>
           </div>
         </div>
@@ -201,7 +201,7 @@
       const historyBtn = document.getElementById("historyBtn");
       const gearPageBtn = document.getElementById("gearPageBtn");
       const coefficientsBtn = document.getElementById("coefficientsBtn");
-      const stravaBtn = document.getElementById("stravaBtn");
+      const suuntoBtn = document.getElementById("suuntoBtn");
       const gearNameEl = document.getElementById("gearName");
       const startDateEl = document.getElementById("startDate");
       const addGearBtn = document.getElementById("addGearBtn");
@@ -313,9 +313,9 @@
         menuPanel.classList.add("hidden");
         window.location.href = "/coefficients.html";
       });
-      stravaBtn.addEventListener("click", () => {
+      suuntoBtn.addEventListener("click", () => {
         menuPanel.classList.add("hidden");
-        window.location.href = "/strava.html";
+        window.location.href = "/suunto.html";
       });
       document.addEventListener("click", (e) => {
         if (!e.target.closest(".menu-wrap")) menuPanel.classList.add("hidden");
