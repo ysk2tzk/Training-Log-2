@@ -57,7 +57,7 @@ const SUUNTO_REFRESH_TOKEN = process.env.SUUNTO_REFRESH_TOKEN || "";
 const SUUNTO_WORKOUTS_URL = "https://cloudapi.suunto.com/v2/workouts";
 const SUUNTO_AUTHORIZE_URL = "https://cloudapi-oauth.suunto.com/oauth/authorize";
 const SUUNTO_TOKEN_URL = "https://cloudapi-oauth.suunto.com/oauth/token";
-const SUUNTO_LOG_SOURCE = "SuuntoAPI ";
+const SUUNTO_LOG_SOURCE = "suunto";
 const SUUNTO_WEBHOOK_SECRET = process.env.SUUNTO_WEBHOOK_SECRET || "";
 const SUUNTO_CONNECTION_ID = 1;
 const isVercel = process.env.VERCEL === "1";
