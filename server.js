@@ -149,6 +149,11 @@ function isSchemaError(error) {
   return code === "PGRST204" || code === "42P01" || message.includes("column") || message.includes("relation");
 }
 
+function isLogSourceConstraintError(error) {
+  const message = String(error?.message || "");
+  return message.includes("log_source_chk");
+}
+
 function decodeJwtPayload(token) {
   const raw = String(token || "");
   const parts = raw.split(".");
@@ -356,6 +361,39 @@ async function insertTrainingLog({
     source_activity_id: sourceActivityId,
     duration_seconds: durationSeconds
   }).select("id, score").single();
+
+  if (inserted.error && isLogSourceConstraintError(inserted.error)) {
+    const retryWithManualSource = await supabase.from("log").insert({
+      category: "Training",
+      item,
+      weight: 0,
+      reps: asNumber(reps, 0),
+      gear: normalizedGear,
+      remarks,
+      score,
+      created_at: date,
+      source: "manual",
+      source_activity_id: sourceActivityId,
+      duration_seconds: durationSeconds
+    }).select("id, score").single();
+
+    if (retryWithManualSource.error && isSchemaError(retryWithManualSource.error)) {
+      const legacyInsert = await supabase.from("log").insert({
+        category: "Training",
+        item,
+        weight: 0,
+        reps: asNumber(reps, 0),
+        gear: normalizedGear,
+        score,
+        created_at: date
+      }).select("id, score").single();
+
+      if (legacyInsert.error) throw legacyInsert.error;
+      return legacyInsert.data;
+    }
+    if (retryWithManualSource.error) throw retryWithManualSource.error;
+    return retryWithManualSource.data;
+  }
 
   if (inserted.error && isSchemaError(inserted.error) && source === "manual") {
     const legacyInsert = await supabase.from("log").insert({
@@ -620,7 +658,6 @@ async function listImportedSuuntoActivityIds() {
   const imported = await supabase
     .from("log")
     .select("source_activity_id")
-    .eq("source", SUUNTO_LOG_SOURCE)
     .not("source_activity_id", "is", null);
 
   if (imported.error) {
