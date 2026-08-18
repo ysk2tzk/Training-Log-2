@@ -280,6 +280,12 @@ function suuntoStatusPayload(connection = null) {
   const currentConnection = connection || suuntoConnection || buildEnvSuuntoConnection();
   return {
     configured: hasSuuntoOAuthConfig(),
+    oauth_env_debug: {
+      client_id: Boolean(SUUNTO_CLIENT_ID),
+      client_secret: Boolean(SUUNTO_CLIENT_SECRET),
+      redirect_uri: Boolean(SUUNTO_REDIRECT_URI),
+      subscription_key: Boolean(SUUNTO_SUBSCRIPTION_KEY)
+    },
     webhook_configured: hasSuuntoWebhookConfig(),
     connected: Boolean(currentConnection?.access_token),
     subscription_key_configured: Boolean(SUUNTO_SUBSCRIPTION_KEY),
