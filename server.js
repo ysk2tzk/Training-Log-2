@@ -153,6 +153,23 @@ function mapLogRow(r) {
   };
 }
 
+function mapEditableLogRow(r) {
+  return {
+    id: r.id,
+    category: r.category || "",
+    item: r.item || "",
+    weight: r.weight == null ? "" : asNumber(r.weight, 0),
+    reps: r.reps == null ? "" : asNumber(r.reps, 0),
+    gear: r.gear || "",
+    remarks: r.remarks || "",
+    score: r.score == null ? "" : asNumber(r.score, 0),
+    created_at: r.created_at || "",
+    source: r.source || "manual",
+    source_activity_id: r.source_activity_id || "",
+    duration_seconds: r.duration_seconds == null ? "" : asNumber(r.duration_seconds, 0)
+  };
+}
+
 function hasSuuntoConfig() {
   return Boolean(SUUNTO_SUBSCRIPTION_KEY && SUUNTO_ACCESS_TOKEN);
 }
@@ -1007,6 +1024,36 @@ app.get("/api/summary", async (req, res) => {
   }
 });
 
+app.get("/api/logs/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: "invalid id" });
+    }
+
+    let logRes = await supabase
+      .from("log")
+      .select("id, category, item, weight, reps, gear, remarks, score, created_at, source, source_activity_id, duration_seconds")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (logRes.error && isSchemaError(logRes.error)) {
+      logRes = await supabase
+        .from("log")
+        .select("id, category, item, weight, reps, gear, remarks, score, created_at")
+        .eq("id", id)
+        .maybeSingle();
+    }
+
+    if (logRes.error) return res.status(500).json({ error: logRes.error.message });
+    if (!logRes.data) return res.status(404).json({ error: "log not found" });
+
+    return res.json({ log: mapEditableLogRow(logRes.data) });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
 app.get("/api/coefficients", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -1182,6 +1229,55 @@ app.post("/api/logs", async (req, res) => {
     }
     if (inserted.error) return res.status(500).json({ error: inserted.error.message });
     return res.json({ id: inserted.data.id, score });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+app.patch("/api/logs/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: "invalid id" });
+    }
+
+    const {
+      item,
+      weight,
+      reps,
+      gear,
+      remarks,
+      score,
+      created_at,
+      source,
+      duration_seconds
+    } = req.body || {};
+
+    const updates = {
+      item: String(item || "").trim(),
+      weight: isBlank(weight) ? 0 : asNumber(weight, 0),
+      reps: isBlank(reps) ? 0 : asNumber(reps, 0),
+      gear: String(gear || "").trim(),
+      remarks: String(remarks || "").trim(),
+      score: isBlank(score) ? 0 : asNumber(score, 0),
+      created_at: String(created_at || "").trim(),
+      source: String(source || "").trim(),
+      duration_seconds: isBlank(duration_seconds) ? null : asNumber(duration_seconds, 0)
+    };
+
+    if (!updates.item || !updates.created_at || !updates.source) {
+      return res.status(400).json({ error: "item, created_at, source is required" });
+    }
+
+    const updated = await supabase
+      .from("log")
+      .update(updates)
+      .eq("id", id)
+      .select("id")
+      .single();
+
+    if (updated.error) return res.status(500).json({ error: updated.error.message });
+    return res.json({ id: updated.data.id });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }

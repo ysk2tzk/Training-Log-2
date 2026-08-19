@@ -182,6 +182,9 @@
         border-top: 1px dashed var(--line);
         padding: 8px 0;
       }
+      .log-row {
+        cursor: pointer;
+      }
 
       .row:first-of-type { border-top: 0; }
       .muted { color: #606b6f; font-size: 13px; }
@@ -489,7 +492,7 @@
           <div class="group">
             <div><strong>${date}</strong></div>
             ${rows.map((r) => `
-              <div class="row">
+              <div class="row log-row" data-log-id="${r.id}">
                 <div>${
                   r.category === "Training"
                     ? (r.item === "ラン"
@@ -647,10 +650,18 @@
       });
       logsEl.addEventListener("click", (e) => {
         const btn = e.target.closest(".delete-btn");
-        if (!btn) return;
-        const id = Number(btn.dataset.logId);
+        if (btn) {
+          const id = Number(btn.dataset.logId);
+          if (!Number.isFinite(id)) return;
+          deleteLog(id);
+          return;
+        }
+
+        const row = e.target.closest(".log-row");
+        if (!row) return;
+        const id = Number(row.dataset.logId);
         if (!Number.isFinite(id)) return;
-        deleteLog(id);
+        window.location.href = `/log-edit.html?id=${id}`;
       });
 
       Promise.all([loadOptions(), loadSummary()]).catch((err) => {
