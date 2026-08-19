@@ -84,6 +84,55 @@ function asNumber(v, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function roundTo(value, digits = 0) {
+  const factor = 10 ** digits;
+  return Math.round(Number(value) * factor) / factor;
+}
+
+function normalizeEpochMs(value) {
+  const normalized = Number(value);
+  if (!Number.isFinite(normalized) || normalized <= 0) return null;
+  return normalized < 1e12 ? Math.round(normalized * 1000) : Math.round(normalized);
+}
+
+function formatTokyoParts(dateLike) {
+  const date = new Date(dateLike);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+
+  const parts = Object.fromEntries(
+    formatter
+      .formatToParts(date)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value])
+  );
+
+  if (!parts.year || !parts.month || !parts.day) return null;
+  return parts;
+}
+
+function toTokyoDateTimeString(dateLike) {
+  const parts = formatTokyoParts(dateLike);
+  if (!parts) return "";
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}+09:00`;
+}
+
+function toTokyoStartOfDayString(dateLike) {
+  const parts = formatTokyoParts(dateLike);
+  if (!parts) return "";
+  return `${parts.year}-${parts.month}-${parts.day}T00:00:00+09:00`;
+}
+
 function isBlank(value) {
   return value == null || String(value).trim() === "";
 }
@@ -331,6 +380,7 @@ async function incrementGearDistanceIfNeeded(gearName, distanceKm, date) {
 
 async function insertTrainingLog({
   date,
+  createdAt = null,
   item,
   reps,
   gear,
@@ -343,6 +393,7 @@ async function insertTrainingLog({
   const coef = await getCoefficient("Training", item, date);
   const score = Math.round(asNumber(reps, 0) * coef);
   const normalizedGear = gear == null ? null : gear || "";
+  const createdAtValue = String(createdAt || toTokyoStartOfDayString(date)).trim();
 
   if (normalizedGear && gearDistanceDelta != null) {
     await incrementGearDistanceIfNeeded(normalizedGear, asNumber(gearDistanceDelta, 0), date);
@@ -356,7 +407,7 @@ async function insertTrainingLog({
     gear: normalizedGear,
     remarks,
     score,
-    created_at: date,
+    created_at: createdAtValue,
     source,
     source_activity_id: sourceActivityId,
     duration_seconds: durationSeconds
@@ -371,7 +422,7 @@ async function insertTrainingLog({
       gear: normalizedGear,
       remarks,
       score,
-      created_at: date,
+      created_at: createdAtValue,
       source: "manual",
       source_activity_id: sourceActivityId,
       duration_seconds: durationSeconds
@@ -385,7 +436,7 @@ async function insertTrainingLog({
         reps: asNumber(reps, 0),
         gear: normalizedGear,
         score,
-        created_at: date
+        created_at: createdAtValue
       }).select("id, score").single();
 
       if (legacyInsert.error) throw legacyInsert.error;
@@ -403,7 +454,7 @@ async function insertTrainingLog({
       reps: asNumber(reps, 0),
       gear: normalizedGear,
       score,
-      created_at: date
+      created_at: createdAtValue
     }).select("id, score").single();
 
     if (legacyInsert.error) throw legacyInsert.error;
@@ -489,54 +540,66 @@ function pickSuuntoWorkoutTime(workout) {
 }
 
 function toTokyoDate(dateLike) {
-  const date = new Date(dateLike);
-  if (Number.isNaN(date.getTime())) return "";
-
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  });
-  return formatter.format(date);
+  const parts = formatTokyoParts(dateLike);
+  if (!parts) return "";
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 function pickSuuntoWorkoutDate(workout) {
-  const startTime = Number(
+  const startTime = normalizeEpochMs(
     workout?.startTime ??
     workout?.start_time ??
     workout?.startDateTime ??
-    workout?.start_date_time ??
-    0
-  );
-  const offsetMinutes = Number(
-    workout?.timeOffsetInMinutes ??
-    workout?.time_offset_in_minutes ??
-    0
+    workout?.start_date_time
   );
 
-  if (Number.isFinite(startTime) && startTime > 0) {
-    return toTokyoDate(startTime + offsetMinutes * 60 * 1000);
+  if (startTime) {
+    return toTokyoDate(startTime);
   }
 
-  const fallback = workout?.start_time || workout?.startTime || workout?.dateTime || workout?.createdAt || workout?.created_at;
-  return toTokyoDate(fallback) || new Date().toISOString().slice(0, 10);
+  const fallback = workout?.localStartTime || workout?.start_time || workout?.startTime || workout?.dateTime || workout?.createdAt || workout?.created_at;
+  return toTokyoDate(fallback) || toTokyoDate(Date.now());
+}
+
+function pickSuuntoCreatedAt(workout) {
+  const startTime = normalizeEpochMs(
+    workout?.startTime ??
+    workout?.start_time ??
+    workout?.startDateTime ??
+    workout?.start_date_time
+  );
+
+  if (startTime) {
+    return toTokyoDateTimeString(startTime);
+  }
+
+  const fallback = workout?.localStartTime || workout?.start_time || workout?.startTime || workout?.dateTime || workout?.createdAt || workout?.created_at;
+  return toTokyoDateTimeString(fallback) || "";
 }
 
 function pickSuuntoDurationSeconds(workout) {
   const candidates = [
-    workout?.totalTime,
-    workout?.total_time,
-    workout?.duration,
-    workout?.durationSeconds,
-    workout?.duration_seconds
+    { value: workout?.totalTime, unit: "seconds" },
+    { value: workout?.total_time, unit: "seconds" },
+    { value: workout?.durationSeconds, unit: "seconds" },
+    { value: workout?.duration_seconds, unit: "seconds" },
+    { value: workout?.duration, unit: "unknown" }
   ];
 
   for (const candidate of candidates) {
-    const normalized = Number(candidate);
-    if (Number.isFinite(normalized) && normalized >= 0) {
+    const normalized = Number(candidate.value);
+    if (!(Number.isFinite(normalized) && normalized >= 0)) continue;
+
+    if (candidate.unit === "seconds") {
       return Math.round(normalized);
     }
+
+    // Some payload shapes expose generic duration values in milliseconds.
+    if (normalized >= 100000) {
+      return Math.round(normalized / 1000);
+    }
+
+    return Math.round(normalized);
   }
 
   return null;
@@ -544,16 +607,25 @@ function pickSuuntoDurationSeconds(workout) {
 
 function pickSuuntoDistanceKm(workout) {
   const candidates = [
-    workout?.totalDistance,
-    workout?.total_distance,
-    workout?.distance
+    { value: workout?.totalDistance, unit: "meters" },
+    { value: workout?.total_distance, unit: "meters" },
+    { value: workout?.distance, unit: "unknown" }
   ];
 
   for (const candidate of candidates) {
-    const normalized = Number(candidate);
-    if (Number.isFinite(normalized) && normalized >= 0) {
-      return Math.round((normalized / 1000) * 100) / 100;
+    const normalized = Number(candidate.value);
+    if (!(Number.isFinite(normalized) && normalized >= 0)) continue;
+
+    if (candidate.unit === "meters") {
+      return roundTo(normalized / 1000, 2);
     }
+
+    // Fallback payloads can expose kilometers directly for short summary objects.
+    if (normalized <= 200) {
+      return roundTo(normalized, 2);
+    }
+
+    return roundTo(normalized / 1000, 2);
   }
 
   return null;
@@ -583,6 +655,7 @@ function convertSuuntoWorkoutToLog(workout) {
 
   const activityId = Number(workout?.activityId ?? workout?.activity_id);
   const date = pickSuuntoWorkoutDate(workout);
+  const createdAt = pickSuuntoCreatedAt(workout);
   const durationSeconds = pickSuuntoDurationSeconds(workout);
   const distanceKm = pickSuuntoDistanceKm(workout);
   const remarks = buildSuuntoRemarks(workout);
@@ -596,6 +669,7 @@ function convertSuuntoWorkoutToLog(workout) {
       ok: true,
       payload: {
         date,
+        createdAt,
         item: "ラン",
         reps: distanceKm,
         gear: null,
@@ -612,12 +686,15 @@ function convertSuuntoWorkoutToLog(workout) {
       return { ok: false, reason: "バイクの時間が取得できません", sourceActivityId };
     }
 
+    const durationMinutes = roundTo(durationSeconds / 60, 2);
+
     return {
       ok: true,
       payload: {
         date,
+        createdAt,
         item: "バイク",
-        reps: durationSeconds / 60,
+        reps: durationMinutes,
         gear: null,
         remarks,
         source: SUUNTO_LOG_SOURCE,
@@ -636,6 +713,7 @@ function convertSuuntoWorkoutToLog(workout) {
       ok: true,
       payload: {
         date,
+        createdAt,
         item: "トレッドミル",
         reps: distanceKm,
         gear: null,
@@ -1048,6 +1126,7 @@ app.post("/api/logs", async (req, res) => {
         const inserted = await insertTrainingLog({
           date,
           item: finalItem,
+          createdAt: toTokyoStartOfDayString(date),
           reps: repsNum,
           gear: gear || "",
           remarks: normalizedRemarks,
@@ -1080,7 +1159,7 @@ app.post("/api/logs", async (req, res) => {
       gear: logGear,
       remarks: normalizedRemarks,
       score,
-      created_at: date,
+      created_at: toTokyoStartOfDayString(date),
       source: "manual",
       source_activity_id: null,
       duration_seconds: null
@@ -1095,7 +1174,7 @@ app.post("/api/logs", async (req, res) => {
         gear: logGear,
         remarks: normalizedRemarks,
         score,
-        created_at: date
+        created_at: toTokyoStartOfDayString(date)
       }).select("id").single();
 
       if (legacyInserted.error) return res.status(500).json({ error: legacyInserted.error.message });
@@ -1327,7 +1406,7 @@ app.patch("/api/gears/:id/end", async (req, res) => {
       return res.status(400).json({ error: "invalid id" });
     }
     const requestedEndDate = String(req.body?.end_date || "").slice(0, 10);
-    const endDate = requestedEndDate || new Date().toISOString().slice(0, 10);
+    const endDate = requestedEndDate || toTokyoDate(Date.now());
 
     const updated = await supabase
       .from("gear")

@@ -319,7 +319,39 @@
       let options = { trainingItems: [], rewardItems: [], gears: [] };
       let isSubmitting = false;
 
-      dateEl.value = new Date().toISOString().slice(0, 10);
+      function tokyoDateInputValue(dateLike = Date.now()) {
+        return new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Tokyo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(new Date(dateLike));
+      }
+
+      function formatTokyoDateLabel(dateLike) {
+        const date = new Date(dateLike);
+        if (Number.isNaN(date.getTime())) return String(dateLike || "");
+        return new Intl.DateTimeFormat("ja-JP", {
+          timeZone: "Asia/Tokyo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(date);
+      }
+
+      function formatTokyoTimeLabel(dateLike) {
+        const date = new Date(dateLike);
+        if (Number.isNaN(date.getTime())) return "";
+        return new Intl.DateTimeFormat("ja-JP", {
+          timeZone: "Asia/Tokyo",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false
+        }).format(date);
+      }
+
+      dateEl.value = tokyoDateInputValue();
 
       function renderItemOptions() {
         const cat = categoryEl.value;
@@ -444,7 +476,7 @@
       function byDateGroups(logs) {
         const m = new Map();
         for (const l of logs) {
-          const day = String(l.created_at || "").slice(0, 10);
+          const day = formatTokyoDateLabel(l.created_at || "");
           if (!m.has(day)) m.set(day, []);
           m.get(day).push(l);
         }
@@ -461,11 +493,11 @@
                 <div>${
                   r.category === "Training"
                     ? (r.item === "ラン"
-                        ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts</span>`
+                        ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}</span>`
                         : r.item === "バイク"
-                          ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts</span>`
-                          : `${r.item}<br><span class="muted">${r.weight > 0 ? `${r.weight}kg / ` : ""}${r.reps}回 / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`)
-                    : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`
+                          ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}</span>`
+                          : `${r.item}<br><span class="muted">${r.weight > 0 ? `${r.weight}kg / ` : ""}${r.reps}回 / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}${r.remarks ? `<br>${r.remarks}` : ""}</span>`)
+                    : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}${r.remarks ? `<br>${r.remarks}` : ""}</span>`
                 }${
                   r.category === "Training" && (r.item === "ラン" || r.item === "バイク") && r.remarks
                     ? `<br><span class="muted">${r.remarks}</span>`

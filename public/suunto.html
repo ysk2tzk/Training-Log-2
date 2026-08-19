@@ -298,7 +298,7 @@
 
         if (data.connected) {
           connectionStateEl.innerHTML =
-            `${statusPill("接続済み", "status-ok")} user: ${data.user || "不明"} / 接続日時: ${fmt(data.connected_at)} / 期限: ${fmt(data.token_expires_at)}`;
+            `${statusPill("接続済み", "status-ok")} user: ${data.user || "不明"} / 接続日時: ${fmt(data.connected_at)}`;
         } else {
           connectionStateEl.innerHTML = `${statusPill("未接続", "status-off")} Suuntoの認可をまだ実行していません。`;
         }

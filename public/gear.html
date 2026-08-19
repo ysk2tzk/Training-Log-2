@@ -209,7 +209,27 @@
       const gearListEl = document.getElementById("gearList");
       const errorEl = document.getElementById("error");
 
-      startDateEl.value = new Date().toISOString().slice(0, 10);
+      function tokyoDateInputValue(dateLike = Date.now()) {
+        return new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Tokyo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(new Date(dateLike));
+      }
+
+      function formatTokyoDateLabel(dateLike) {
+        const date = new Date(dateLike);
+        if (Number.isNaN(date.getTime())) return String(dateLike || "");
+        return new Intl.DateTimeFormat("ja-JP", {
+          timeZone: "Asia/Tokyo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(date);
+      }
+
+      startDateEl.value = tokyoDateInputValue();
 
       function renderGears(gears) {
         if (!gears.length) {
@@ -218,14 +238,15 @@
         }
 
         gearListEl.innerHTML = gears.map((g) => {
-          const startDate = String(g.start_date || "").slice(0, 10);
-          const endDate = g.end_date ? ` / 使用終了: ${String(g.end_date).slice(0, 10)}` : "";
+          const startDateValue = tokyoDateInputValue(g.start_date || "");
+          const startDate = formatTokyoDateLabel(g.start_date || "");
+          const endDate = g.end_date ? ` / 使用終了: ${formatTokyoDateLabel(g.end_date)}` : "";
           const distance = Number(g.distance || 0).toFixed(1);
           return `
             <div class="group">
               <div class="row">
                 <div><span class="gear-name">${g.name}</span><br><span class="gear-meta">${distance}km / 使用開始: ${startDate}${endDate}</span></div>
-                <div>${Number(g.status) === 1 ? `<button class="end-btn" type="button" data-gear-id="${g.id}" data-start-date="${startDate}">使用終了</button>` : ""}</div>
+                <div>${Number(g.status) === 1 ? `<button class="end-btn" type="button" data-gear-id="${g.id}" data-start-date="${startDateValue}">使用終了</button>` : ""}</div>
               </div>
             </div>
           `;

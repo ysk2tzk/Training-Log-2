@@ -214,10 +214,43 @@
 
       let allLogs = [];
 
+      function formatTokyoDateLabel(dateLike) {
+        const date = new Date(dateLike);
+        if (Number.isNaN(date.getTime())) return String(dateLike || "");
+        return new Intl.DateTimeFormat("ja-JP", {
+          timeZone: "Asia/Tokyo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(date);
+      }
+
+      function formatTokyoYearMonth(dateLike) {
+        const date = new Date(dateLike);
+        if (Number.isNaN(date.getTime())) return "";
+        return new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Tokyo",
+          year: "numeric",
+          month: "2-digit"
+        }).format(date);
+      }
+
+      function formatTokyoTimeLabel(dateLike) {
+        const date = new Date(dateLike);
+        if (Number.isNaN(date.getTime())) return "";
+        return new Intl.DateTimeFormat("ja-JP", {
+          timeZone: "Asia/Tokyo",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false
+        }).format(date);
+      }
+
       function byDateGroups(logs) {
         const groups = new Map();
         for (const log of logs) {
-          const day = String(log.created_at || "").slice(0, 10);
+          const day = formatTokyoDateLabel(log.created_at || "");
           if (!groups.has(day)) groups.set(day, []);
           groups.get(day).push(log);
         }
@@ -238,11 +271,11 @@
                 ${
                   r.category === "Training"
                     ? (r.item === "ラン"
-                        ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`
+                        ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}${r.remarks ? `<br>${r.remarks}` : ""}</span>`
                         : r.item === "バイク"
-                          ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`
-                          : `${r.item}<br><span class="muted">${r.weight > 0 ? `${r.weight}kg / ` : ""}${r.reps}回 / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`)
-                    : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts${r.remarks ? `<br>${r.remarks}` : ""}</span>`
+                          ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}${r.remarks ? `<br>${r.remarks}` : ""}</span>`
+                          : `${r.item}<br><span class="muted">${r.weight > 0 ? `${r.weight}kg / ` : ""}${r.reps}回 / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}${r.remarks ? `<br>${r.remarks}` : ""}</span>`)
+                    : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}${r.remarks ? `<br>${r.remarks}` : ""}</span>`
                 }
               </div>
             `).join("")}
@@ -290,7 +323,7 @@
         const item = itemEl.value;
 
         const filtered = allLogs.filter((log) => {
-          const byYearMonth = yearMonth ? String(log.created_at || "").slice(0, 7) === yearMonth : true;
+          const byYearMonth = yearMonth ? formatTokyoYearMonth(log.created_at || "") === yearMonth : true;
           const byItem = item ? log.item === item : true;
           return byYearMonth && byItem;
         });

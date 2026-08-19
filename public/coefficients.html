@@ -217,6 +217,26 @@
 
       const OTHER = "その他(自由入力)";
 
+      function tokyoDateInputValue(dateLike = Date.now()) {
+        return new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Tokyo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(new Date(dateLike));
+      }
+
+      function formatTokyoDateLabel(dateLike) {
+        const date = new Date(dateLike);
+        if (Number.isNaN(date.getTime())) return String(dateLike || "");
+        return new Intl.DateTimeFormat("ja-JP", {
+          timeZone: "Asia/Tokyo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(date);
+      }
+
       function renderNameOptions(names) {
         nameEl.innerHTML =
           '<option value="" selected>選択してください</option>' +
@@ -231,7 +251,7 @@
         }
 
         coefficientsEl.innerHTML = rows.map((row) => {
-          const startDate = String(row.start_date || "").slice(0, 10);
+          const startDate = formatTokyoDateLabel(row.start_date || "");
           return `
             <div class="group">
               <div class="row">
@@ -262,6 +282,8 @@
         renderNameOptions(Array.isArray(data.names) ? data.names : []);
         renderCoefficients(Array.isArray(data.coefficients) ? data.coefficients : []);
       }
+
+      startDateEl.value = tokyoDateInputValue();
 
       async function updateCoefficient() {
         errorEl.textContent = "";
