@@ -133,6 +133,34 @@ function toTokyoStartOfDayString(dateLike) {
   return `${parts.year}-${parts.month}-${parts.day}T00:00:00+09:00`;
 }
 
+function toTokyoNowDateString() {
+  return toTokyoDate(Date.now());
+}
+
+function toTokyoNowDateTimeString() {
+  return toTokyoDateTimeString(Date.now());
+}
+
+function buildManualCreatedAt(dateLike) {
+  const normalizedDate = String(dateLike || "").slice(0, 10);
+  if (!normalizedDate) return "";
+  return normalizedDate === toTokyoNowDateString()
+    ? toTokyoNowDateTimeString()
+    : `${normalizedDate}T00:00:00+09:00`;
+}
+
+function replaceTokyoDateKeepingTime(existingDateLike, nextDate) {
+  const parts = formatTokyoParts(existingDateLike);
+  const normalizedDate = String(nextDate || "").slice(0, 10);
+  if (!normalizedDate) return "";
+
+  if (!parts) {
+    return `${normalizedDate}T00:00:00+09:00`;
+  }
+
+  return `${normalizedDate}T${parts.hour}:${parts.minute}:${parts.second}+09:00`;
+}
+
 function isBlank(value) {
   return value == null || String(value).trim() === "";
 }
@@ -1173,7 +1201,7 @@ app.post("/api/logs", async (req, res) => {
         const inserted = await insertTrainingLog({
           date,
           item: finalItem,
-          createdAt: toTokyoStartOfDayString(date),
+          createdAt: buildManualCreatedAt(date),
           reps: repsNum,
           gear: gear || "",
           remarks: normalizedRemarks,
@@ -1206,7 +1234,7 @@ app.post("/api/logs", async (req, res) => {
       gear: logGear,
       remarks: normalizedRemarks,
       score,
-      created_at: toTokyoStartOfDayString(date),
+      created_at: buildManualCreatedAt(date),
       source: "manual",
       source_activity_id: null,
       duration_seconds: null
@@ -1221,7 +1249,7 @@ app.post("/api/logs", async (req, res) => {
         gear: logGear,
         remarks: normalizedRemarks,
         score,
-        created_at: toTokyoStartOfDayString(date)
+        created_at: buildManualCreatedAt(date)
       }).select("id").single();
 
       if (legacyInserted.error) return res.status(500).json({ error: legacyInserted.error.message });
@@ -1241,37 +1269,85 @@ app.patch("/api/logs/:id", async (req, res) => {
       return res.status(400).json({ error: "invalid id" });
     }
 
+    const existing = await supabase
+      .from("log")
+      .select("id, category, created_at, source, source_activity_id, duration_seconds")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (existing.error) return res.status(500).json({ error: existing.error.message });
+    if (!existing.data) return res.status(404).json({ error: "log not found" });
+
     const {
+      date,
+      created_at,
       item,
+      customItem,
       weight,
       reps,
       gear,
-      remarks,
-      score,
-      created_at,
-      source,
-      duration_seconds
+      remarks
     } = req.body || {};
 
-    const updates = {
-      item: String(item || "").trim(),
-      weight: isBlank(weight) ? 0 : asNumber(weight, 0),
-      reps: isBlank(reps) ? 0 : asNumber(reps, 0),
-      gear: String(gear || "").trim(),
-      remarks: String(remarks || "").trim(),
-      score: isBlank(score) ? 0 : asNumber(score, 0),
-      created_at: String(created_at || "").trim(),
-      source: String(source || "").trim(),
-      duration_seconds: isBlank(duration_seconds) ? null : asNumber(duration_seconds, 0)
-    };
+    const category = String(existing.data.category || "");
+    const selectedItem = String(item || "").trim();
+    const finalItem = selectedItem === "その他(自由入力)"
+      ? String(customItem || "").trim()
+      : selectedItem;
+    const normalizedCreatedAt = String(created_at || "").trim();
+    const normalizedDate = normalizedCreatedAt
+      ? normalizedCreatedAt.slice(0, 10)
+      : String(date || "").slice(0, 10);
+    const normalizedRemarks = String(remarks || "").trim();
+    const repsNum = asNumber(reps, 0);
+    const weightNum = isBlank(weight) ? 0 : asNumber(weight, 0);
 
-    if (!updates.item || !updates.created_at || !updates.source) {
-      return res.status(400).json({ error: "item, created_at, source is required" });
+    if (!category || !finalItem || !normalizedDate) {
+      return res.status(400).json({ error: "date, item is required" });
     }
+
+    let score = 0;
+    let normalizedGear = "";
+    let normalizedWeight = 0;
+
+    if (category === "Training") {
+      const coef = await getCoefficient(category, finalItem, normalizedDate);
+      if (finalItem === "ラン" || finalItem === "バイク" || finalItem === "トレッドミル") {
+        normalizedGear = String(gear || "").trim();
+        normalizedWeight = 0;
+        score = Math.round(repsNum * coef);
+      } else {
+        normalizedGear = "";
+        normalizedWeight = weightNum;
+        score = weightNum > 0
+          ? Math.round(repsNum * coef * weightNum)
+          : Math.round(repsNum * coef);
+      }
+    } else if (category === "Reward") {
+      const coef = await getCoefficient(category, finalItem, normalizedDate);
+      normalizedGear = "";
+      normalizedWeight = 0;
+      score = Math.round(repsNum * coef);
+    } else {
+      return res.status(400).json({ error: "invalid category" });
+    }
+
+    const nextCreatedAt = normalizedCreatedAt || replaceTokyoDateKeepingTime(existing.data.created_at, normalizedDate);
 
     const updated = await supabase
       .from("log")
-      .update(updates)
+      .update({
+        item: finalItem,
+        weight: normalizedWeight,
+        reps: repsNum,
+        gear: normalizedGear,
+        remarks: normalizedRemarks,
+        score,
+        created_at: nextCreatedAt,
+        source: existing.data.source || "manual",
+        source_activity_id: existing.data.source_activity_id || null,
+        duration_seconds: existing.data.duration_seconds == null ? null : asNumber(existing.data.duration_seconds, 0)
+      })
       .eq("id", id)
       .select("id")
       .single();

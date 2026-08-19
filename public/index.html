@@ -125,6 +125,10 @@
         appearance: none;
       }
 
+      input[type="number"] {
+        text-align: right;
+      }
+
       textarea {
         resize: vertical;
         min-height: 88px;
@@ -188,6 +192,7 @@
 
       .row:first-of-type { border-top: 0; }
       .muted { color: #606b6f; font-size: 13px; }
+      .warn-text { color: #c23131; font-weight: 700; }
       .err { color: #c23131; font-size: 13px; min-height: 1.2em; }
       .status {
         color: var(--accent);
@@ -496,9 +501,9 @@
                 <div>${
                   r.category === "Training"
                     ? (r.item === "ラン"
-                        ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}</span>`
+                        ? `${r.gear ? r.item : `<span class="warn-text">ラン (未登録)</span>`}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}</span>`
                         : r.item === "バイク"
-                          ? `${r.item}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}</span>`
+                          ? `${r.gear ? r.item : `<span class="warn-text">バイク (未登録)</span>`}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}</span>`
                           : `${r.item}<br><span class="muted">${r.weight > 0 ? `${r.weight}kg / ` : ""}${r.reps}回 / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}${r.remarks ? `<br>${r.remarks}` : ""}</span>`)
                     : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}${r.remarks ? `<br>${r.remarks}` : ""}</span>`
                 }${

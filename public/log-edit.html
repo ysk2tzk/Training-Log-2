@@ -19,7 +19,9 @@
         --accent: #0c6b58;
         --line: #d9d3c6;
       }
+
       * { box-sizing: border-box; }
+
       body {
         margin: 0;
         font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
@@ -29,11 +31,13 @@
           var(--bg);
         color: var(--ink);
       }
+
       .page {
         max-width: 720px;
         margin: 0 auto;
         padding: 16px 14px 28px;
       }
+
       .card {
         background: var(--card);
         border: 1px solid var(--line);
@@ -41,18 +45,24 @@
         padding: 14px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
       }
+
+      h1 {
+        margin: 0;
+        font-size: 27px;
+        font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+        font-weight: 900;
+        letter-spacing: 0.01em;
+      }
+
       .header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin: 0 0 12px;
       }
-      h1 {
-        margin: 0;
-        font-size: 27px;
-        font-weight: 900;
-      }
+
       .menu-wrap { position: relative; }
+
       .menu-btn {
         width: 44px;
         min-height: 44px;
@@ -64,6 +74,7 @@
         line-height: 1;
         padding: 0;
       }
+
       .menu-panel {
         position: absolute;
         right: 0;
@@ -75,6 +86,7 @@
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
         padding: 6px;
       }
+
       .menu-item {
         display: block;
         width: 100%;
@@ -87,16 +99,20 @@
         font-size: 14px;
         white-space: nowrap;
       }
+
       .menu-item:hover { background: #f6f3eb; }
       .hidden { display: none; }
+
       .field { margin-bottom: 10px; }
+
       label {
         display: block;
         margin-bottom: 6px;
         font-weight: 600;
         font-size: 14px;
       }
-      input, textarea, button {
+
+      input, select, textarea, button {
         width: 100%;
         max-width: 100%;
         min-width: 0;
@@ -107,52 +123,69 @@
         font-size: 16px;
         background: white;
       }
-      textarea {
-        resize: vertical;
-        min-height: 88px;
+
+      input[type="number"] {
+        text-align: right;
       }
+
       input[readonly] {
         background: #f6f3eb;
         color: #606b6f;
       }
+
+      textarea {
+        resize: vertical;
+        min-height: 88px;
+      }
+
       button {
         border: none;
         background: linear-gradient(90deg, var(--accent), #109a7e);
         color: white;
         font-weight: 700;
       }
+
       button.secondary {
         background: #ebe5d9;
         color: var(--ink);
         border: 1px solid var(--line);
       }
-      .button-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
+
+      button:disabled {
+        cursor: wait;
+        opacity: 0.7;
       }
+
       .meta {
-        margin-bottom: 14px;
+        margin-bottom: 12px;
         padding: 12px;
         border: 1px solid var(--line);
         border-radius: 12px;
         background: #fcfbf7;
       }
+
       .meta-line {
         font-size: 14px;
-        line-height: 1.7;
+        line-height: 1.8;
       }
+
+      .button-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
       .status {
         color: var(--accent);
         font-size: 13px;
         min-height: 1.2em;
-        margin: 10px 0 0;
+        margin: 8px 0 0;
       }
+
       .err {
         color: #c23131;
         font-size: 13px;
         min-height: 1.2em;
-        margin: 10px 0 0;
       }
     </style>
   </head>
@@ -180,41 +213,28 @@
         </div>
 
         <div class="field">
-          <label for="item">アイテム</label>
-          <input id="item" type="text" />
-        </div>
-        <div class="field">
-          <label for="weight">Weight</label>
-          <input id="weight" type="number" step="any" />
-        </div>
-        <div class="field">
-          <label for="reps">Reps</label>
-          <input id="reps" type="number" step="any" />
-        </div>
-        <div class="field">
-          <label for="gear">Gear</label>
-          <input id="gear" type="text" />
-        </div>
-        <div class="field">
-          <label for="remarks">備考</label>
-          <textarea id="remarks"></textarea>
-        </div>
-        <div class="field">
-          <label for="score">Score</label>
-          <input id="score" type="number" step="any" />
-        </div>
-        <div class="field">
-          <label for="createdAt">created_at (JST)</label>
+          <label for="createdAt">日時</label>
           <input id="createdAt" type="datetime-local" step="1" />
         </div>
+
         <div class="field">
-          <label for="source">source</label>
-          <input id="source" type="text" />
+          <label for="category">カテゴリ</label>
+          <input id="category" type="text" readonly />
         </div>
+
         <div class="field">
-          <label for="durationSeconds">duration_seconds</label>
-          <input id="durationSeconds" type="number" step="1" />
+          <label for="item">アイテム</label>
+          <select id="item">
+            <option value="" selected>選択してください</option>
+          </select>
         </div>
+
+        <div id="customItemField" class="field hidden">
+          <label for="customItem">自由入力</label>
+          <input id="customItem" type="text" placeholder="アイテム名" />
+        </div>
+
+        <div id="dynamicFields"></div>
 
         <div class="button-row">
           <button id="backBtn" class="secondary" type="button">戻る</button>
@@ -228,6 +248,42 @@
     <script>
       const params = new URLSearchParams(window.location.search);
       const logId = Number(params.get("id"));
+      const OTHER = "その他(自由入力)";
+      const DEFAULT_TRAINING_FIELDS = {
+        showWeight: true,
+        repsLabel: "Reps",
+        repsPlaceholder: "回",
+        showGear: false,
+        showRemarks: true
+      };
+      const ITEM_FIELD_CONFIGS = {
+        ラン: {
+          showWeight: false,
+          repsLabel: "距離 (km)",
+          repsPlaceholder: "0.0km",
+          showGear: true,
+          showRemarks: true
+        },
+        バイク: {
+          showWeight: false,
+          repsLabel: "継続時間",
+          repsPlaceholder: "min",
+          showGear: true,
+          showRemarks: true
+        },
+        トレッドミル: {
+          showWeight: false,
+          repsLabel: "距離",
+          repsPlaceholder: "0.0km",
+          showGear: true,
+          showRemarks: true
+        }
+      };
+      const REWARD_FIELD_CONFIG = {
+        repsLabel: "価格",
+        repsPlaceholder: "円",
+        showRemarks: true
+      };
 
       const menuBtn = document.getElementById("menuBtn");
       const menuPanel = document.getElementById("menuPanel");
@@ -239,19 +295,30 @@
       const metaIdEl = document.getElementById("metaId");
       const metaCategoryEl = document.getElementById("metaCategory");
       const metaSourceActivityIdEl = document.getElementById("metaSourceActivityId");
-      const itemEl = document.getElementById("item");
-      const weightEl = document.getElementById("weight");
-      const repsEl = document.getElementById("reps");
-      const gearEl = document.getElementById("gear");
-      const remarksEl = document.getElementById("remarks");
-      const scoreEl = document.getElementById("score");
       const createdAtEl = document.getElementById("createdAt");
-      const sourceEl = document.getElementById("source");
-      const durationSecondsEl = document.getElementById("durationSeconds");
+      const categoryEl = document.getElementById("category");
+      const itemEl = document.getElementById("item");
+      const customItemFieldEl = document.getElementById("customItemField");
+      const customItemEl = document.getElementById("customItem");
+      const dynamicFieldsEl = document.getElementById("dynamicFields");
       const backBtn = document.getElementById("backBtn");
       const saveBtn = document.getElementById("saveBtn");
       const statusEl = document.getElementById("status");
       const errorEl = document.getElementById("error");
+
+      let options = { trainingItems: [], rewardItems: [], gears: [] };
+      let currentLog = null;
+
+      function formatTokyoDateInputValue(dateLike) {
+        const date = new Date(dateLike);
+        if (Number.isNaN(date.getTime())) return "";
+        return new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Tokyo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(date);
+      }
 
       function formatTokyoDateTimeLocal(dateLike) {
         const date = new Date(dateLike);
@@ -279,6 +346,155 @@
         return localValue ? `${localValue}+09:00` : "";
       }
 
+      function fieldHtml(id, label, type, placeholder = "", step = "") {
+        return `
+          <div class="field">
+            <label for="${id}">${label}</label>
+            <input id="${id}" type="${type}" placeholder="${placeholder}" ${step ? `step="${step}"` : ""} />
+          </div>
+        `;
+      }
+
+      function selectHtml(id, label, values) {
+        return `
+          <div class="field">
+            <label for="${id}">${label}</label>
+            <select id="${id}">
+              <option value="">選択してください</option>
+              ${values.map((v) => `<option value="${v}">${v}</option>`).join("")}
+            </select>
+          </div>
+        `;
+      }
+
+      function textareaHtml(id, label, placeholder) {
+        return `
+          <div class="field">
+            <label for="${id}">${label}</label>
+            <textarea id="${id}" placeholder="${placeholder}"></textarea>
+          </div>
+        `;
+      }
+
+      function getGearOptionsForItem(item) {
+        const allGears = (options.gears || []).map((g) => ({
+          name: typeof g === "string" ? g : g.name,
+          category: typeof g === "string" ? "" : g.category
+        }));
+
+        if (item === "ラン") {
+          return allGears.filter((g) => g.category === "Shoes").map((g) => g.name).filter(Boolean);
+        }
+
+        if (item === "バイク") {
+          return allGears.filter((g) => g.category === "Bike").map((g) => g.name).filter(Boolean);
+        }
+
+        return allGears.map((g) => g.name).filter(Boolean);
+      }
+
+      function getTrainingFieldConfig(item) {
+        return {
+          ...DEFAULT_TRAINING_FIELDS,
+          ...(ITEM_FIELD_CONFIGS[item] || {})
+        };
+      }
+
+      function renderItemOptions() {
+        const category = categoryEl.value;
+        const items = category === "Training" ? options.trainingItems : options.rewardItems;
+        const all = [...new Set(items)].sort((a, b) => a.localeCompare(b, "ja"));
+        all.push(OTHER);
+        itemEl.innerHTML =
+          `<option value="" selected>選択してください</option>` +
+          all.map((value) => `<option value="${value}">${value}</option>`).join("");
+      }
+
+      function applyCurrentFieldValues() {
+        if (!currentLog) return;
+
+        const weightInput = document.getElementById("weight");
+        const repsInput = document.getElementById("reps");
+        const gearInput = document.getElementById("gear");
+        const remarksInput = document.getElementById("remarks");
+
+        if (weightInput) weightInput.value = currentLog.weight ?? "";
+        if (repsInput) repsInput.value = currentLog.reps ?? "";
+        if (gearInput) gearInput.value = currentLog.gear || "";
+        if (remarksInput) remarksInput.value = currentLog.remarks || "";
+      }
+
+      function captureCurrentFieldValues() {
+        if (!currentLog) return;
+
+        const weightInput = document.getElementById("weight");
+        const repsInput = document.getElementById("reps");
+        const gearInput = document.getElementById("gear");
+        const remarksInput = document.getElementById("remarks");
+
+        if (weightInput) currentLog.weight = weightInput.value;
+        if (repsInput) currentLog.reps = repsInput.value;
+        if (gearInput) currentLog.gear = gearInput.value;
+        if (remarksInput) currentLog.remarks = remarksInput.value;
+        currentLog.item = itemEl.value === OTHER ? customItemEl.value : itemEl.value;
+      }
+
+      function renderDynamicFields() {
+        const category = categoryEl.value;
+        const item = itemEl.value;
+        const isOther = item === OTHER || item.startsWith("その他");
+        customItemFieldEl.classList.toggle("hidden", !isOther);
+
+        if (!category || !item) {
+          dynamicFieldsEl.innerHTML = "";
+          return;
+        }
+
+        if (category === "Training") {
+          const config = isOther ? DEFAULT_TRAINING_FIELDS : getTrainingFieldConfig(item);
+          const fields = [];
+
+          if (config.showWeight) {
+            fields.push(fieldHtml("weight", "Weight", "number", "0.0kg", "any"));
+          }
+
+          fields.push(fieldHtml("reps", config.repsLabel, "number", config.repsPlaceholder, "any"));
+
+          if (config.showGear) {
+            fields.push(selectHtml("gear", "Gear", getGearOptionsForItem(item)));
+          }
+
+          if (config.showRemarks) {
+            fields.push(textareaHtml("remarks", "備考", "メモ"));
+          }
+
+          dynamicFieldsEl.innerHTML = fields.join("");
+          applyCurrentFieldValues();
+          return;
+        }
+
+        if (category === "Reward") {
+          dynamicFieldsEl.innerHTML =
+            fieldHtml("reps", REWARD_FIELD_CONFIG.repsLabel, "number", REWARD_FIELD_CONFIG.repsPlaceholder, "any") +
+            textareaHtml("remarks", "備考", "メモ");
+          applyCurrentFieldValues();
+        }
+      }
+
+      async function loadOptions() {
+        const res = await fetch("/api/options");
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || "オプション取得に失敗しました");
+        }
+
+        options = {
+          trainingItems: Array.isArray(data.trainingItems) ? data.trainingItems : [],
+          rewardItems: Array.isArray(data.rewardItems) ? data.rewardItems : [],
+          gears: Array.isArray(data.gears) ? data.gears : []
+        };
+      }
+
       async function loadLog() {
         if (!Number.isInteger(logId) || logId <= 0) {
           throw new Error("無効なIDです");
@@ -290,19 +506,24 @@
           throw new Error(data.error || "記録の取得に失敗しました");
         }
 
-        const log = data.log || {};
-        metaIdEl.textContent = log.id || "-";
-        metaCategoryEl.textContent = log.category || "-";
-        metaSourceActivityIdEl.textContent = log.source_activity_id || "-";
-        itemEl.value = log.item || "";
-        weightEl.value = log.weight ?? "";
-        repsEl.value = log.reps ?? "";
-        gearEl.value = log.gear || "";
-        remarksEl.value = log.remarks || "";
-        scoreEl.value = log.score ?? "";
-        createdAtEl.value = formatTokyoDateTimeLocal(log.created_at || "");
-        sourceEl.value = log.source || "";
-        durationSecondsEl.value = log.duration_seconds ?? "";
+        currentLog = data.log || null;
+        if (!currentLog) {
+          throw new Error("記録が見つかりません");
+        }
+
+        metaIdEl.textContent = currentLog.id || "-";
+        metaCategoryEl.textContent = currentLog.category || "-";
+        metaSourceActivityIdEl.textContent = currentLog.source_activity_id || "-";
+        createdAtEl.value = formatTokyoDateTimeLocal(currentLog.created_at || "");
+        categoryEl.value = currentLog.category || "";
+
+        renderItemOptions();
+
+        const categoryItems = currentLog.category === "Training" ? options.trainingItems : options.rewardItems;
+        const hasKnownItem = categoryItems.includes(currentLog.item);
+        itemEl.value = hasKnownItem ? currentLog.item : OTHER;
+        customItemEl.value = hasKnownItem ? "" : (currentLog.item || "");
+        renderDynamicFields();
       }
 
       async function saveLog() {
@@ -311,15 +532,14 @@
         saveBtn.disabled = true;
 
         const body = {
-          item: itemEl.value,
-          weight: weightEl.value,
-          reps: repsEl.value,
-          gear: gearEl.value,
-          remarks: remarksEl.value,
-          score: scoreEl.value,
+          date: formatTokyoDateInputValue(createdAtEl.value || ""),
           created_at: toTokyoOffsetString(createdAtEl.value),
-          source: sourceEl.value,
-          duration_seconds: durationSecondsEl.value
+          item: itemEl.value,
+          customItem: customItemEl.value,
+          weight: document.getElementById("weight")?.value ?? "",
+          reps: document.getElementById("reps")?.value ?? "",
+          gear: document.getElementById("gear")?.value ?? "",
+          remarks: document.getElementById("remarks")?.value ?? ""
         };
 
         try {
@@ -332,7 +552,7 @@
           if (!res.ok) {
             throw new Error(data.error || "保存に失敗しました");
           }
-          statusEl.textContent = "保存しました";
+          window.location.href = "/";
         } catch (error) {
           statusEl.textContent = "";
           errorEl.textContent = error?.message || "保存に失敗しました";
@@ -345,18 +565,23 @@
         menuPanel.classList.toggle("hidden");
       });
       mainPageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
         window.location.href = "/";
       });
       historyBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
         window.location.href = "/history.html";
       });
       gearPageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
         window.location.href = "/gear.html";
       });
       coefficientsBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
         window.location.href = "/coefficients.html";
       });
       suuntoBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
         window.location.href = "/suunto.html";
       });
       document.addEventListener("click", (e) => {
@@ -364,14 +589,24 @@
           menuPanel.classList.add("hidden");
         }
       });
+      itemEl.addEventListener("change", () => {
+        captureCurrentFieldValues();
+        renderDynamicFields();
+      });
+      customItemEl.addEventListener("input", () => {
+        if (!currentLog) return;
+        currentLog.item = customItemEl.value;
+      });
       backBtn.addEventListener("click", () => {
         window.location.href = "/";
       });
       saveBtn.addEventListener("click", saveLog);
 
-      loadLog().catch((error) => {
-        errorEl.textContent = error?.message || "初期化に失敗しました";
-      });
+      loadOptions()
+        .then(() => loadLog())
+        .catch((error) => {
+          errorEl.textContent = error?.message || "初期化に失敗しました";
+        });
     </script>
   </body>
 </html>
