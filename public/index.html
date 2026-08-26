@@ -382,7 +382,7 @@
         return `
           <div class="field">
             <label for="${id}">${label}</label>
-            <input id="${id}" type="${type}" placeholder="${placeholder}" />
+            <input id="${id}" type="${type}" placeholder="${placeholder}" ${type === "number" ? 'inputmode="decimal"' : ""} />
           </div>
         `;
       }
