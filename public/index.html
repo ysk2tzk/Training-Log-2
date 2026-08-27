@@ -147,7 +147,8 @@
       }
 
       #totalScore {
-        margin: 14px 0;
+        margin: 0;
+        padding: 0;
         font-size: 34px;
         font-weight: 900;
         text-align: right;
@@ -193,13 +194,14 @@
       .row:first-of-type { border-top: 0; }
       .muted { color: #606b6f; font-size: 13px; }
       .warn-text { color: #c23131; font-weight: 700; }
-      .err { color: #c23131; font-size: 13px; min-height: 1.2em; }
+      .err { color: #c23131; font-size: 13px; min-height: 1.2em; margin: 8px 0 0; }
       .status {
         color: var(--accent);
         font-size: 13px;
         min-height: 1.2em;
         margin: 8px 0 0;
       }
+      .status:empty { display: none; }
       .divider {
         border: 0;
         border-top: 1px solid var(--line);
@@ -226,6 +228,7 @@
               <button id="mainPageBtn" class="menu-item" type="button">トレーニング記録</button>
               <button id="historyBtn" class="menu-item" type="button">過去ログ一覧</button>
               <button id="gearManageBtn" class="menu-item" type="button">ギア管理</button>
+              <button id="exerciseManageBtn" class="menu-item" type="button">種目管理</button>
               <button id="coefficientsBtn" class="menu-item" type="button">係数</button>
               <button id="suuntoBtn" class="menu-item" type="button">Suunto連携</button>
             </div>
@@ -286,6 +289,7 @@
       const historyBtn = document.getElementById("historyBtn");
       const coefficientsBtn = document.getElementById("coefficientsBtn");
       const gearManageBtn = document.getElementById("gearManageBtn");
+      const exerciseManageBtn = document.getElementById("exerciseManageBtn");
       const suuntoBtn = document.getElementById("suuntoBtn");
 
       const OTHER = "その他(自由入力)";
@@ -299,21 +303,21 @@
       const ITEM_FIELD_CONFIGS = {
         ラン: {
           showWeight: false,
-          repsLabel: "距離",
+          repsLabel: "Reps",
           repsPlaceholder: "0.0km",
           showGear: true,
           showRemarks: true
         },
         バイク: {
           showWeight: false,
-          repsLabel: "継続時間",
+          repsLabel: "Reps",
           repsPlaceholder: "min",
           showGear: true,
           showRemarks: true
         },
         トレッドミル: {
           showWeight: false,
-          repsLabel: "距離",
+          repsLabel: "Reps",
           repsPlaceholder: "0.0km",
           showGear: true,
           showRemarks: true
@@ -324,7 +328,7 @@
         repsPlaceholder: "円",
         showRemarks: true
       };
-      let options = { trainingItems: [], rewardItems: [], gears: [] };
+      let options = { trainingItems: [], trainingExercises: [], rewardItems: [], gears: [] };
       let isSubmitting = false;
 
       function tokyoDateInputValue(dateLike = Date.now()) {
@@ -371,7 +375,7 @@
         itemFieldEl.classList.remove("hidden");
         const items = cat === "Training" ? options.trainingItems : options.rewardItems;
         const all = [...new Set(items)].sort((a, b) => a.localeCompare(b, "ja"));
-        all.push(OTHER);
+        if (cat === "Reward") all.push(OTHER);
 
         itemEl.innerHTML =
           `<option value="" selected>選択してください</option>` +
@@ -408,30 +412,25 @@
         `;
       }
 
-      function getGearOptionsForItem(item) {
+      function getGearOptions() {
         const allGears = (options.gears || []).map((g) => ({
           name: typeof g === "string" ? g : g.name,
           category: typeof g === "string" ? "" : g.category
         }));
-
-        if (item === "ラン") {
-          return allGears
-            .filter((g) => g.category === "Shoes")
-            .map((g) => g.name)
-            .filter(Boolean);
-        }
-
-        if (item === "バイク") {
-          return allGears
-            .filter((g) => g.category === "Bike")
-            .map((g) => g.name)
-            .filter(Boolean);
-        }
-
         return allGears.map((g) => g.name).filter(Boolean);
       }
 
       function getTrainingFieldConfig(item) {
+        const exercise = (options.trainingExercises || []).find((value) => value.name === item);
+        if (exercise) {
+          return {
+            showWeight: exercise.weightEnabled,
+            repsLabel: "Reps",
+            repsPlaceholder: exercise.repsPlaceholder,
+            showGear: exercise.gearEnabled,
+            showRemarks: true
+          };
+        }
         return {
           ...DEFAULT_TRAINING_FIELDS,
           ...(ITEM_FIELD_CONFIGS[item] || {})
@@ -441,7 +440,7 @@
       function renderDynamicFields() {
         const cat = categoryEl.value;
         const item = itemEl.value;
-        const isOther = item === OTHER || item.startsWith("その他");
+        const isOther = cat === "Reward" && (item === OTHER || item.startsWith("その他"));
         if (!cat || !item) {
           dynamicFieldsEl.innerHTML = "";
           return;
@@ -462,7 +461,7 @@
           fields.push(fieldHtml("reps", config.repsLabel, "number", config.repsPlaceholder));
 
           if (config.showGear) {
-            fields.push(selectHtml("gear", "Gear", getGearOptionsForItem(item)));
+            fields.push(selectHtml("gear", "Gear", getGearOptions()));
           }
 
           if (config.showRemarks) {
@@ -527,6 +526,7 @@
         const data = await res.json();
         options = {
           trainingItems: Array.isArray(data?.trainingItems) ? data.trainingItems : [],
+          trainingExercises: Array.isArray(data?.trainingExercises) ? data.trainingExercises : [],
           rewardItems: Array.isArray(data?.rewardItems) ? data.rewardItems : [],
           gears: Array.isArray(data?.gears) ? data.gears : []
         };
@@ -643,6 +643,10 @@
       gearManageBtn.addEventListener("click", () => {
         menuPanel.classList.add("hidden");
         window.location.href = "/gear.html";
+      });
+      exerciseManageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/exercises.html";
       });
       suuntoBtn.addEventListener("click", () => {
         menuPanel.classList.add("hidden");

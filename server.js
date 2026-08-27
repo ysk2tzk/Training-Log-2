@@ -438,7 +438,7 @@ async function insertTrainingLog({
     await incrementGearDistanceIfNeeded(normalizedGear, asNumber(gearDistanceDelta, 0), date);
   }
 
-  const inserted = await supabase.from("log").insert({
+  const inserted = await supabase.from("training_log").insert({
     category: "Training",
     item,
     weight: 0,
@@ -453,7 +453,7 @@ async function insertTrainingLog({
   }).select("id, score").single();
 
   if (inserted.error && isLogSourceConstraintError(inserted.error)) {
-    const retryWithManualSource = await supabase.from("log").insert({
+    const retryWithManualSource = await supabase.from("training_log").insert({
       category: "Training",
       item,
       weight: 0,
@@ -468,7 +468,7 @@ async function insertTrainingLog({
     }).select("id, score").single();
 
     if (retryWithManualSource.error && isSchemaError(retryWithManualSource.error)) {
-      const legacyInsert = await supabase.from("log").insert({
+      const legacyInsert = await supabase.from("training_log").insert({
         category: "Training",
         item,
         weight: 0,
@@ -486,7 +486,7 @@ async function insertTrainingLog({
   }
 
   if (inserted.error && isSchemaError(inserted.error) && source === "manual") {
-    const legacyInsert = await supabase.from("log").insert({
+    const legacyInsert = await supabase.from("training_log").insert({
       category: "Training",
       item,
       weight: 0,
@@ -773,7 +773,7 @@ function convertSuuntoWorkoutToLog(workout) {
 
 async function listImportedSuuntoActivityIds() {
   const imported = await supabase
-    .from("log")
+    .from("training_log")
     .select("source_activity_id")
     .not("source_activity_id", "is", null);
 
@@ -994,8 +994,8 @@ async function getCoefficient(category, item, date) {
 app.get("/api/options", async (req, res) => {
   try {
     const [trainingRes, rewardRes, gearRes] = await Promise.all([
-      supabase.from("log").select("item").eq("category", "Training").not("item", "is", null),
-      supabase.from("log").select("item").eq("category", "Reward").not("item", "is", null),
+      supabase.from("training_exercise").select("name, weight_enabled, gear_enabled, reps_placeholder").eq("active", true).order("name", { ascending: true }),
+      supabase.from("training_log").select("item").eq("category", "Reward").not("item", "is", null),
       supabase.from("gear").select("name, category").order("name", { ascending: true })
     ]);
 
@@ -1004,7 +1004,13 @@ app.get("/api/options", async (req, res) => {
       return res.status(500).json({ error: error.message });
     }
 
-    const trainingItems = [...new Set((trainingRes.data || []).map((r) => r.item || "").filter(Boolean))].sort((a, b) => a.localeCompare(b, "ja"));
+    const trainingExercises = (trainingRes.data || []).map((r) => ({
+      name: r.name || "",
+      weightEnabled: Boolean(r.weight_enabled),
+      gearEnabled: Boolean(r.gear_enabled),
+      repsPlaceholder: r.reps_placeholder || "回"
+    })).filter((exercise) => Boolean(exercise.name));
+    const trainingItems = trainingExercises.map((exercise) => exercise.name);
     const rewardItems = [...new Set((rewardRes.data || []).map((r) => r.item || "").filter(Boolean))].sort((a, b) => a.localeCompare(b, "ja"));
     const gears = (gearRes.data || [])
       .map((r) => ({
@@ -1013,7 +1019,74 @@ app.get("/api/options", async (req, res) => {
       }))
       .filter((g) => Boolean(g.name));
 
-    return res.json({ trainingItems, rewardItems, gears });
+    return res.json({ trainingItems, trainingExercises, rewardItems, gears });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/api/training-exercises", async (req, res) => {
+  try {
+    const includeInactive = req.query.includeInactive === "1";
+    let query = supabase
+      .from("training_exercise")
+      .select("id, name, weight_enabled, gear_enabled, reps_placeholder, active")
+      .order("id", { ascending: false });
+    if (!includeInactive) query = query.eq("active", true);
+    const { data, error } = await query;
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ exercises: data || [] });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/training-exercises", async (req, res) => {
+  try {
+    const name = String(req.body?.name || "").trim();
+    const repsPlaceholder = String(req.body?.reps_placeholder || "").trim();
+    if (!name || !repsPlaceholder) return res.status(400).json({ error: "name, reps_placeholder is required" });
+    const { data, error } = await supabase.from("training_exercise").insert({
+      name,
+      weight_enabled: Boolean(req.body?.weight_enabled),
+      gear_enabled: Boolean(req.body?.gear_enabled),
+      reps_placeholder: repsPlaceholder,
+      active: true
+    }).select("id").single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ id: data.id });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+app.patch("/api/training-exercises/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const name = String(req.body?.name || "").trim();
+    const repsPlaceholder = String(req.body?.reps_placeholder || "").trim();
+    if (!Number.isInteger(id) || id <= 0 || !name || !repsPlaceholder) return res.status(400).json({ error: "valid id, name, reps_placeholder is required" });
+    const { data, error } = await supabase.from("training_exercise").update({
+      name,
+      weight_enabled: Boolean(req.body?.weight_enabled),
+      gear_enabled: Boolean(req.body?.gear_enabled),
+      reps_placeholder: repsPlaceholder,
+      updated_at: new Date().toISOString()
+    }).eq("id", id).select("id").single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ id: data.id });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+app.patch("/api/training-exercises/:id/archive", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "invalid id" });
+    const { data, error } = await supabase.from("training_exercise").update({ active: false, updated_at: new Date().toISOString() }).eq("id", id).select("id").single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ id: data.id });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
@@ -1022,14 +1095,14 @@ app.get("/api/options", async (req, res) => {
 app.get("/api/summary", async (req, res) => {
   try {
     let summaryRes = await supabase
-      .from("log")
+      .from("training_log")
       .select("id, category, item, weight, reps, gear, remarks, score, created_at, source, duration_seconds")
       .order("created_at", { ascending: false })
       .order("id", { ascending: false });
 
     if (summaryRes.error && isSchemaError(summaryRes.error)) {
       summaryRes = await supabase
-        .from("log")
+        .from("training_log")
         .select("id, category, item, weight, reps, gear, score, created_at")
         .order("created_at", { ascending: false })
         .order("id", { ascending: false });
@@ -1054,14 +1127,14 @@ app.get("/api/logs/:id", async (req, res) => {
     }
 
     let logRes = await supabase
-      .from("log")
+      .from("training_log")
       .select("id, category, item, weight, reps, gear, remarks, score, created_at, source, source_activity_id, duration_seconds")
       .eq("id", id)
       .maybeSingle();
 
     if (logRes.error && isSchemaError(logRes.error)) {
       logRes = await supabase
-        .from("log")
+        .from("training_log")
         .select("id, category, item, weight, reps, gear, remarks, score, created_at")
         .eq("id", id)
         .maybeSingle();
@@ -1191,7 +1264,20 @@ app.post("/api/logs", async (req, res) => {
     let score = 0;
 
     if (category === "Training") {
-      if (finalItem === "ラン" || finalItem === "バイク") {
+      const exerciseRes = await supabase
+        .from("training_exercise")
+        .select("id, weight_enabled, gear_enabled")
+        .eq("name", finalItem)
+        .eq("active", true)
+        .maybeSingle();
+      if (exerciseRes.error) return res.status(500).json({ error: exerciseRes.error.message });
+      if (!exerciseRes.data) return res.status(400).json({ error: "training exercise is not available" });
+
+      if (
+        (finalItem === "ラン" || finalItem === "バイク") &&
+        exerciseRes.data.gear_enabled &&
+        !exerciseRes.data.weight_enabled
+      ) {
         const inserted = await insertTrainingLog({
           date,
           item: finalItem,
@@ -1206,10 +1292,10 @@ app.post("/api/logs", async (req, res) => {
         });
         return res.json({ id: inserted.id, score: inserted.score });
       } else {
-        logWeight = hasWeightInput ? weightNum : 0;
-        logGear = "";
-        score = hasWeightInput
-          ? Math.round(repsNum * coef * weightNum)
+        logWeight = exerciseRes.data.weight_enabled && hasWeightInput ? weightNum : 0;
+        logGear = exerciseRes.data.gear_enabled ? String(gear || "").trim() : "";
+        score = logWeight > 0
+          ? Math.round(repsNum * coef * logWeight)
           : Math.round(repsNum * coef);
       }
     } else if (category === "Reward") {
@@ -1220,7 +1306,7 @@ app.post("/api/logs", async (req, res) => {
       return res.status(400).json({ error: "invalid category" });
     }
 
-    const inserted = await supabase.from("log").insert({
+    const inserted = await supabase.from("training_log").insert({
       category,
       item: finalItem,
       weight: logWeight,
@@ -1235,7 +1321,7 @@ app.post("/api/logs", async (req, res) => {
     }).select("id").single();
 
     if (inserted.error && isSchemaError(inserted.error)) {
-      const legacyInserted = await supabase.from("log").insert({
+      const legacyInserted = await supabase.from("training_log").insert({
         category,
         item: finalItem,
         weight: logWeight,
@@ -1264,7 +1350,7 @@ app.patch("/api/logs/:id", async (req, res) => {
     }
 
     const existing = await supabase
-      .from("log")
+      .from("training_log")
       .select("id, category, created_at, source, source_activity_id, duration_seconds")
       .eq("id", id)
       .maybeSingle();
@@ -1305,18 +1391,21 @@ app.patch("/api/logs/:id", async (req, res) => {
     let normalizedWeight = 0;
 
     if (category === "Training") {
+      const exerciseRes = await supabase
+        .from("training_exercise")
+        .select("id, weight_enabled, gear_enabled")
+        .eq("name", finalItem)
+        .eq("active", true)
+        .maybeSingle();
+      if (exerciseRes.error) return res.status(500).json({ error: exerciseRes.error.message });
+      if (!exerciseRes.data) return res.status(400).json({ error: "training exercise is not available" });
+
       const coef = await getCoefficient(category, finalItem, normalizedDate);
-      if (finalItem === "ラン" || finalItem === "バイク" || finalItem === "トレッドミル") {
-        normalizedGear = String(gear || "").trim();
-        normalizedWeight = 0;
-        score = Math.round(repsNum * coef);
-      } else {
-        normalizedGear = "";
-        normalizedWeight = weightNum;
-        score = weightNum > 0
-          ? Math.round(repsNum * coef * weightNum)
-          : Math.round(repsNum * coef);
-      }
+      normalizedGear = exerciseRes.data.gear_enabled ? String(gear || "").trim() : "";
+      normalizedWeight = exerciseRes.data.weight_enabled ? weightNum : 0;
+      score = normalizedWeight > 0
+        ? Math.round(repsNum * coef * normalizedWeight)
+        : Math.round(repsNum * coef);
     } else if (category === "Reward") {
       const coef = await getCoefficient(category, finalItem, normalizedDate);
       normalizedGear = "";
@@ -1329,7 +1418,7 @@ app.patch("/api/logs/:id", async (req, res) => {
     const nextCreatedAt = normalizedCreatedAt || replaceTokyoDateKeepingTime(existing.data.created_at, normalizedDate);
 
     const updated = await supabase
-      .from("log")
+      .from("training_log")
       .update({
         item: finalItem,
         weight: normalizedWeight,
@@ -1595,7 +1684,7 @@ app.delete("/api/logs/:id", async (req, res) => {
       return res.status(400).json({ error: "invalid id" });
     }
 
-    const deleted = await supabase.from("log").delete().eq("id", id).select("id").single();
+    const deleted = await supabase.from("training_log").delete().eq("id", id).select("id").single();
     if (deleted.error) return res.status(500).json({ error: deleted.error.message });
     return res.json({ id: deleted.data.id });
   } catch (e) {

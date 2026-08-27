@@ -9,7 +9,7 @@ begin
   join pg_class t on t.oid = c.conrelid
   join pg_namespace n on n.oid = t.relnamespace
   where n.nspname = 'public'
-    and t.relname = 'log'
+    and t.relname = 'training_log'
     and c.conname = 'log_source_chk';
 
   if constraint_def is null then
@@ -24,9 +24,9 @@ begin
   base_expr := regexp_replace(constraint_def, '^CHECK \(\((.*)\)\)$', '\1');
   base_expr := regexp_replace(base_expr, '^CHECK \((.*)\)$', '\1');
 
-  execute 'alter table public.log drop constraint log_source_chk';
+  execute 'alter table public.training_log drop constraint log_source_chk';
   execute format(
-    'alter table public.log add constraint log_source_chk check ((%s) or (source = %L))',
+    'alter table public.training_log add constraint log_source_chk check ((%s) or (source = %L))',
     base_expr,
     'suunto'
   );

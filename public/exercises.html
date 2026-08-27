@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>種目管理</title>
+    <style>
+      :root { --bg:#f4f1ea; --card:#fffdf8; --ink:#1f2a2e; --accent:#0c6b58; --line:#d9d3c6; }
+      * { box-sizing:border-box; } body { margin:0; color:var(--ink); background:var(--bg); font-family:"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; }
+      main { max-width:720px; margin:0 auto; padding:16px 14px 28px; } section { padding:14px; border:1px solid var(--line); border-radius:16px; background:var(--card); }
+      h1 { margin:0; font-size:27px; } .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; } .menu-wrap { position:relative; } .menu-btn { width:44px; min-height:44px; padding:0; border:1px solid var(--line); border-radius:12px; background:#fff; color:var(--ink); font-size:22px; } .menu-panel { position:absolute; right:0; top:50px; z-index:1; min-width:168px; padding:6px; border:1px solid var(--line); border-radius:10px; background:#fff; box-shadow:0 8px 20px rgba(0,0,0,.08); } .menu-item { display:block; width:100%; min-height:auto; padding:8px 10px; border:0; border-radius:8px; background:#fff; color:var(--ink); text-align:left; font-size:14px; font-weight:400; } .hidden { display:none; } label { display:block; margin:10px 0 6px; font-weight:700; font-size:14px; }
+      input, button { width:100%; min-height:44px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:16px; background:#fff; }
+      button { border:0; background:linear-gradient(90deg,var(--accent),#109a7e); color:#fff; font-weight:700; }
+      .setting-row { margin:12px 0; } .setting-row > label { margin:0 0 6px; } .radio-group { display:flex; gap:18px; } .radio-group label { display:flex; align-items:center; gap:7px; margin:0; font-weight:400; } .radio-group input { width:18px; min-height:18px; }
+      #save { margin:20px 0 8px; } #status { margin:0; } #status:empty { display:none; }
+      hr { border:0; border-top:1px solid var(--line); margin:18px 0; } .row { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:12px 0; border-top:1px solid var(--line); } .row:first-child { border-top:0; } .meta { color:#667; font-size:13px; } .actions { display:flex; gap:8px; } .archive { width:auto; min-height:34px; padding:7px 10px; background:#c86446; } .edit { background:linear-gradient(90deg,var(--accent),#109a7e); } .err { color:#c23131; min-height:1.2em; font-size:13px; margin:0; }
+    </style>
+  </head>
+  <body><main><section>
+    <div class="header"><h1>種目管理</h1><div class="menu-wrap"><button id="menuBtn" class="menu-btn" type="button" aria-label="メニュー">☰</button><div id="menuPanel" class="menu-panel hidden"><button class="menu-item" data-href="/">トレーニング記録</button><button class="menu-item" data-href="/history.html">過去ログ一覧</button><button class="menu-item" data-href="/gear.html">ギア管理</button><button class="menu-item" data-href="/exercises.html">種目管理</button><button class="menu-item" data-href="/coefficients.html">係数</button><button class="menu-item" data-href="/suunto.html">Suunto連携</button></div></div></div>
+    <label for="name">種目名</label><input id="name" type="text" />
+    <div class="setting-row"><label>Weight使用可否</label><div class="radio-group"><label><input name="weightEnabled" type="radio" value="false" checked />使用しない</label><label><input name="weightEnabled" type="radio" value="true" />使用する</label></div></div>
+    <label for="repsPlaceholder">Repsのプレースホルダー</label><input id="repsPlaceholder" type="text" />
+    <div class="setting-row"><label>ギア使用可否</label><div class="radio-group"><label><input name="gearEnabled" type="radio" value="false" checked />使用しない</label><label><input name="gearEnabled" type="radio" value="true" />使用する</label></div></div>
+    <button id="save" type="button">追加</button><p id="status" class="meta"></p><p id="error" class="err"></p><hr />
+    <div id="list"></div>
+  </section></main>
+  <script>
+    const nameEl=document.getElementById("name"), placeholderEl=document.getElementById("repsPlaceholder"), saveEl=document.getElementById("save"), listEl=document.getElementById("list"), errorEl=document.getElementById("error"), statusEl=document.getElementById("status"), menuBtn=document.getElementById("menuBtn"), menuPanel=document.getElementById("menuPanel");
+    let editingId=null, exercises=[], isSaving=false;
+    const escapeHtml=(value)=>String(value).replace(/[&<>"]/g,(char)=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[char]);
+    async function load(){ const res=await fetch("/api/training-exercises"); const data=await res.json(); if(!res.ok) throw new Error(data.error); exercises=data.exercises||[]; listEl.innerHTML=exercises.length?exercises.map((item)=>`<div class="row"><div><strong>${escapeHtml(item.name)}</strong><div class="meta">Weight: ${item.weight_enabled?"使用":"なし"} / Gear: ${item.gear_enabled?"使用":"なし"} / Reps: ${escapeHtml(item.reps_placeholder)}</div></div><div class="actions"><button class="archive edit" data-id="${item.id}">編集</button><button class="archive" data-id="${item.id}">削除</button></div></div>`).join(""):'<div class="meta">登録済みの種目はありません。</div>'; }
+    function selectedBoolean(name){ return document.querySelector(`input[name="${name}"]:checked`).value === "true"; }
+    function setBoolean(name,value){ document.querySelector(`input[name="${name}"][value="${value}"]`).checked=true; }
+    function reset(){ editingId=null; nameEl.value=""; setBoolean("weightEnabled",false); setBoolean("gearEnabled",false); placeholderEl.value=""; saveEl.textContent="追加"; }
+    async function save(){ if(isSaving)return; errorEl.textContent=""; statusEl.textContent=""; if(!nameEl.value.trim()){errorEl.textContent="種目名を入力してください";nameEl.focus();return;} if(!placeholderEl.value.trim()){errorEl.textContent="Repsのプレースホルダーを入力してください";placeholderEl.focus();return;} isSaving=true; const isEditing=Boolean(editingId); saveEl.disabled=true; saveEl.textContent=isEditing?"保存中...":"追加中..."; try { const body={name:nameEl.value,weight_enabled:selectedBoolean("weightEnabled"),gear_enabled:selectedBoolean("gearEnabled"),reps_placeholder:placeholderEl.value}; const res=await fetch(isEditing?`/api/training-exercises/${editingId}`:"/api/training-exercises",{method:isEditing?"PATCH":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); const data=await res.json(); if(!res.ok) throw new Error(data.error||"保存に失敗しました"); reset(); await load(); statusEl.textContent=isEditing?"保存しました":"追加しました"; } finally { isSaving=false; saveEl.disabled=false; saveEl.textContent=editingId?"保存":"追加"; } }
+    menuBtn.addEventListener("click",()=>menuPanel.classList.toggle("hidden")); menuPanel.addEventListener("click",(event)=>{const button=event.target.closest("[data-href]");if(button)window.location.href=button.dataset.href;}); document.addEventListener("click",(event)=>{if(!event.target.closest(".menu-wrap"))menuPanel.classList.add("hidden");}); saveEl.addEventListener("click",()=>save().catch((error)=>{errorEl.textContent=error.message;})); listEl.addEventListener("click",async(event)=>{const button=event.target.closest(".archive");if(!button)return;const item=exercises.find((value)=>value.id===Number(button.dataset.id));if(button.classList.contains("edit")&&item){editingId=item.id;nameEl.value=item.name;setBoolean("weightEnabled",item.weight_enabled);setBoolean("gearEnabled",item.gear_enabled);placeholderEl.value=item.reps_placeholder;saveEl.textContent="保存";return;}if(!item||!confirm(`${item.name}を削除しますか？\n種目は選択肢から削除されますが、過去ログは保持されます。`))return;const res=await fetch(`/api/training-exercises/${button.dataset.id}/archive`,{method:"PATCH"});if(!res.ok){const data=await res.json();errorEl.textContent=data.error||"削除に失敗しました";return;}load();}); load().catch((error)=>errorEl.textContent=error.message);
+  </script></body>
+</html>

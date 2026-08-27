@@ -173,13 +173,14 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
+        margin-bottom: 8px;
       }
 
       .status {
         color: var(--accent);
         font-size: 13px;
         min-height: 1.2em;
-        margin: 8px 0 0;
+        margin: 0;
       }
 
       .err {
@@ -200,6 +201,7 @@
               <button id="mainPageBtn" class="menu-item" type="button">トレーニング記録</button>
               <button id="historyBtn" class="menu-item" type="button">過去ログ一覧</button>
               <button id="gearPageBtn" class="menu-item" type="button">ギア管理</button>
+              <button id="exerciseManageBtn" class="menu-item" type="button">種目管理</button>
               <button id="coefficientsBtn" class="menu-item" type="button">係数</button>
               <button id="suuntoBtn" class="menu-item" type="button">Suunto連携</button>
             </div>
@@ -259,21 +261,21 @@
       const ITEM_FIELD_CONFIGS = {
         ラン: {
           showWeight: false,
-          repsLabel: "距離 (km)",
+          repsLabel: "Reps",
           repsPlaceholder: "0.0km",
           showGear: true,
           showRemarks: true
         },
         バイク: {
           showWeight: false,
-          repsLabel: "継続時間",
+          repsLabel: "Reps",
           repsPlaceholder: "min",
           showGear: true,
           showRemarks: true
         },
         トレッドミル: {
           showWeight: false,
-          repsLabel: "距離",
+          repsLabel: "Reps",
           repsPlaceholder: "0.0km",
           showGear: true,
           showRemarks: true
@@ -290,6 +292,7 @@
       const mainPageBtn = document.getElementById("mainPageBtn");
       const historyBtn = document.getElementById("historyBtn");
       const gearPageBtn = document.getElementById("gearPageBtn");
+      const exerciseManageBtn = document.getElementById("exerciseManageBtn");
       const coefficientsBtn = document.getElementById("coefficientsBtn");
       const suuntoBtn = document.getElementById("suuntoBtn");
       const metaIdEl = document.getElementById("metaId");
@@ -306,7 +309,7 @@
       const statusEl = document.getElementById("status");
       const errorEl = document.getElementById("error");
 
-      let options = { trainingItems: [], rewardItems: [], gears: [] };
+      let options = { trainingItems: [], trainingExercises: [], rewardItems: [], gears: [] };
       let currentLog = null;
 
       function formatTokyoDateInputValue(dateLike) {
@@ -376,24 +379,19 @@
         `;
       }
 
-      function getGearOptionsForItem(item) {
+      function getGearOptions() {
         const allGears = (options.gears || []).map((g) => ({
           name: typeof g === "string" ? g : g.name,
           category: typeof g === "string" ? "" : g.category
         }));
-
-        if (item === "ラン") {
-          return allGears.filter((g) => g.category === "Shoes").map((g) => g.name).filter(Boolean);
-        }
-
-        if (item === "バイク") {
-          return allGears.filter((g) => g.category === "Bike").map((g) => g.name).filter(Boolean);
-        }
-
         return allGears.map((g) => g.name).filter(Boolean);
       }
 
       function getTrainingFieldConfig(item) {
+        const exercise = (options.trainingExercises || []).find((value) => value.name === item);
+        if (exercise) {
+          return { showWeight: exercise.weightEnabled, repsLabel: "Reps", repsPlaceholder: exercise.repsPlaceholder, showGear: exercise.gearEnabled, showRemarks: true };
+        }
         return {
           ...DEFAULT_TRAINING_FIELDS,
           ...(ITEM_FIELD_CONFIGS[item] || {})
@@ -404,7 +402,7 @@
         const category = categoryEl.value;
         const items = category === "Training" ? options.trainingItems : options.rewardItems;
         const all = [...new Set(items)].sort((a, b) => a.localeCompare(b, "ja"));
-        all.push(OTHER);
+        if (category === "Reward") all.push(OTHER);
         itemEl.innerHTML =
           `<option value="" selected>選択してください</option>` +
           all.map((value) => `<option value="${value}">${value}</option>`).join("");
@@ -442,7 +440,7 @@
       function renderDynamicFields() {
         const category = categoryEl.value;
         const item = itemEl.value;
-        const isOther = item === OTHER || item.startsWith("その他");
+        const isOther = category === "Reward" && (item === OTHER || item.startsWith("その他"));
         customItemFieldEl.classList.toggle("hidden", !isOther);
 
         if (!category || !item) {
@@ -461,7 +459,7 @@
           fields.push(fieldHtml("reps", config.repsLabel, "number", config.repsPlaceholder, "any"));
 
           if (config.showGear) {
-            fields.push(selectHtml("gear", "Gear", getGearOptionsForItem(item)));
+            fields.push(selectHtml("gear", "Gear", getGearOptions()));
           }
 
           if (config.showRemarks) {
@@ -490,6 +488,7 @@
 
         options = {
           trainingItems: Array.isArray(data.trainingItems) ? data.trainingItems : [],
+          trainingExercises: Array.isArray(data.trainingExercises) ? data.trainingExercises : [],
           rewardItems: Array.isArray(data.rewardItems) ? data.rewardItems : [],
           gears: Array.isArray(data.gears) ? data.gears : []
         };
@@ -521,7 +520,7 @@
 
         const categoryItems = currentLog.category === "Training" ? options.trainingItems : options.rewardItems;
         const hasKnownItem = categoryItems.includes(currentLog.item);
-        itemEl.value = hasKnownItem ? currentLog.item : OTHER;
+        itemEl.value = hasKnownItem ? currentLog.item : (currentLog.category === "Reward" ? OTHER : "");
         customItemEl.value = hasKnownItem ? "" : (currentLog.item || "");
         renderDynamicFields();
       }
@@ -575,6 +574,10 @@
       gearPageBtn.addEventListener("click", () => {
         menuPanel.classList.add("hidden");
         window.location.href = "/gear.html";
+      });
+      exerciseManageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/exercises.html";
       });
       coefficientsBtn.addEventListener("click", () => {
         menuPanel.classList.add("hidden");

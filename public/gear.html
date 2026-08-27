@@ -149,7 +149,7 @@
         background: #d67d1f;
         border-radius: 8px;
       }
-      .err { color: #c23131; font-size: 13px; min-height: 1.2em; }
+      .err { color: #c23131; font-size: 13px; min-height: 1.2em; margin: 8px 0 0; }
     </style>
   </head>
   <body>
@@ -163,6 +163,7 @@
               <button id="mainPageBtn" class="menu-item" type="button">トレーニング記録</button>
               <button id="historyBtn" class="menu-item" type="button">過去ログ一覧</button>
               <button id="gearPageBtn" class="menu-item" type="button">ギア管理</button>
+              <button id="exerciseManageBtn" class="menu-item" type="button">種目管理</button>
               <button id="coefficientsBtn" class="menu-item" type="button">係数</button>
               <button id="suuntoBtn" class="menu-item" type="button">Suunto連携</button>
             </div>
@@ -200,6 +201,7 @@
       const mainPageBtn = document.getElementById("mainPageBtn");
       const historyBtn = document.getElementById("historyBtn");
       const gearPageBtn = document.getElementById("gearPageBtn");
+      const exerciseManageBtn = document.getElementById("exerciseManageBtn");
       const coefficientsBtn = document.getElementById("coefficientsBtn");
       const suuntoBtn = document.getElementById("suuntoBtn");
       const gearNameEl = document.getElementById("gearName");
@@ -329,6 +331,10 @@
       });
       gearPageBtn.addEventListener("click", () => {
         menuPanel.classList.add("hidden");
+      });
+      exerciseManageBtn.addEventListener("click", () => {
+        menuPanel.classList.add("hidden");
+        window.location.href = "/exercises.html";
       });
       coefficientsBtn.addEventListener("click", () => {
         menuPanel.classList.add("hidden");
