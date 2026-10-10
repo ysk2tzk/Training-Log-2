@@ -499,14 +499,14 @@
               <div class="row log-row" data-log-id="${r.id}">
                 <div>${
                   r.category === "Training"
-                    ? (r.item === "ラン"
-                        ? `${r.gear ? r.item : `<span class="warn-text">ラン (未登録)</span>`}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}</span>`
+                    ? (r.item === "ラン" || r.item === "トレッドミル"
+                        ? `${r.gear ? r.item : `<span class="warn-text">${r.item} (未登録)</span>`}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}km / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}</span>`
                         : r.item === "バイク"
                           ? `${r.gear ? r.item : `<span class="warn-text">バイク (未登録)</span>`}${r.gear ? ` (${r.gear})` : ""}<br><span class="muted">${r.reps}min / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}</span>`
                           : `${r.item}<br><span class="muted">${r.weight > 0 ? `${r.weight}kg / ` : ""}${r.reps}回 / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}${r.remarks ? `<br>${r.remarks}` : ""}</span>`)
                     : `${r.item}<br><span class="muted">${r.reps}円 / ${r.score}pts / ${formatTokyoTimeLabel(r.created_at)}${r.remarks ? `<br>${r.remarks}` : ""}</span>`
                 }${
-                  r.category === "Training" && (r.item === "ラン" || r.item === "バイク") && r.remarks
+                  r.category === "Training" && (r.item === "ラン" || r.item === "バイク" || r.item === "トレッドミル") && r.remarks
                     ? `<br><span class="muted">${r.remarks}</span>`
                     : ""
                 }</div>
